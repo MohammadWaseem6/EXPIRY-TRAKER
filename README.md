@@ -36,7 +36,7 @@ A full-stack web application to help you track your grocery items, medicines, an
 
 **1. Clone the repository**
 bash
-git clone https://github.com/yourusername/expiry-tracker.git
+git clone https://github.com/MohammadWaseem6/EXPIRY-TRAKER
 cd expiry-tracker
 2. Backend Setup
 cd server
