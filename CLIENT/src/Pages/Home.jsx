@@ -44,16 +44,22 @@ const Home = () => {
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
           <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="font-bold text-lg">➕ Add Items</h3>
-            <p className="text-gray-600 text-sm">Store product name, category, and expiry date.</p>
+            <h3 className="font-bold text-lg">Add Items</h3>
+            <p className="text-gray-600 text-sm">
+              Store product name, category, and expiry date.
+            </p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="font-bold text-lg">📋 View List</h3>
-            <p className="text-gray-600 text-sm">See all your items sorted by expiry date.</p>
+            <h3 className="font-bold text-lg">View List</h3>
+            <p className="text-gray-600 text-sm">
+              See all your items sorted by expiry date.
+            </p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="font-bold text-lg">🗑️ Manage</h3>
-            <p className="text-gray-600 text-sm">Delete items when they are used or expired.</p>
+            <h3 className="font-bold text-lg"> Manage</h3>
+            <p className="text-gray-600 text-sm">
+              Delete items when they are used or expired.
+            </p>
           </div>
         </div>
       </div>
