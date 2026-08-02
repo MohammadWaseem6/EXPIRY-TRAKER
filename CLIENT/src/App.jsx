@@ -8,9 +8,11 @@ import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
+    
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          
           {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

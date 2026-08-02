@@ -1,20 +1,27 @@
 const Item = require("../models/Item");
 
+// CREATE ITEM
 const createItem = async (req, res) => {
   try {
-    console.log("User from token:", req.user);
-    const { name, categeory, expiryDate } = req.body;
-    if (!(name || categeory || expiryDate)) {
-      return res.status(404).json({
+    console.log("Creating item with user:", req.user);
+    console.log("Body:", req.body);
+
+    const { name, category, expiryDate } = req.body;
+
+    // ✅ Fixed: correct validation
+    if (!name || !category || !expiryDate) {
+      return res.status(400).json({
         error: "Name, category, and expiry date are required",
       });
     }
+
     const item = await Item.create({
       name,
-      category,
+      category,       // ✅ fixed spelling
       expiryDate,
-      user: req.user.id, // comes from authMiddleware
+      user: req.user.id,
     });
+
     res.status(201).json({
       message: "Item Created Successfully!",
       item,
@@ -25,55 +32,67 @@ const createItem = async (req, res) => {
   }
 };
 
-//get items
-const getItems = async (req, rea) => {
+// GET ALL ITEMS
+const getItems = async (req, res) => {  // ✅ fixed: 'res' not 'rea'
   try {
     const items = await Item.find({
       user: req.user.id,
     }).sort({ expiryDate: 1 });
-    res.json(item);
-  } catch (error) {}
+
+    res.json(items);  // ✅ fixed: 'items' not 'item'
+  } catch (error) {
+    console.error("Get items error:", error);
+    res.status(500).json({ error: "Server error while fetching items" });
+  }
 };
 
-//delete itemss, usig id
+// DELETE ITEM
 const deleteItem = async (req, res) => {
   try {
-    const item = await Item.findByIdAndDelete({
+    const item = await Item.findOneAndDelete({  // ✅ fixed: added 'await'
       _id: req.params.id,
-      user: req.user.id, // check items belongs to that user or not
+      user: req.user.id,
     });
+
     if (!item) {
       return res.status(404).json({
         error: "Item not found or not authorized",
       });
     }
+
     res.json({
-      message: "Item Deleted successfully..",
+      message: "Item Deleted successfully",
     });
   } catch (error) {
     console.error("Delete item error:", error);
     res.status(500).json({ error: "Server error while deleting item" });
   }
 };
-//update items
-const UpdateItems = async (req, res) => {
+
+// UPDATE ITEM
+const updateItem = async (req, res) => {  // ✅ renamed to 'updateItem' (consistent)
   try {
-    const { name, categeory, expiryDate } = req.body;
-    const ItemId = req.params.id;
-    //find item and make sure item belongs to a user
-    const item = await user.findOne({ _id: ItemId, user: req.user.id });
+    const { name, category, expiryDate } = req.body;  // ✅ fixed spelling
+    const itemId = req.params.id;
+
+    // ✅ Fixed: use Item.findOne (not user.findOne)
+    const item = await Item.findOne({ _id: itemId, user: req.user.id });
+
     if (!item) {
-      res.status(404).json({
-        error: "no item found or unauthorized",
+      return res.status(404).json({
+        error: "No item found or unauthorized",
       });
     }
-    //update wahi fields kro jo provided hai
+
+    // Update only the fields that are provided
     if (name) item.name = name;
-    if (categeory) item.categeory = categeory;
+    if (category) item.category = category;  // ✅ fixed spelling
     if (expiryDate) item.expiryDate = expiryDate;
+
     await item.save();
+
     res.json({
-      message: "item updated successfully",
+      message: "Item updated successfully",
       item,
     });
   } catch (error) {
@@ -82,4 +101,4 @@ const UpdateItems = async (req, res) => {
   }
 };
 
-module.exports = { createItem, getItems, deleteItem, UpdateItems };
+module.exports = { createItem, getItems, deleteItem, updateItem };  // ✅ consistent naming
