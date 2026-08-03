@@ -181,10 +181,10 @@ const Dashboard = () => {
   }));
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "#ff0000" }}>
-      {/* ===== SIDEBAR ===== */}
+    <div className="flex h-screen bg-dashboard">
+      {/* SIDEBAR */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 flex flex-col flex-shrink-0 transition-all duration-300`}
+        className={`${sidebarOpen ? "w-64" : "w-20"} bg-gray-500 border-r border-gray-200 flex flex-col flex-shrink-0 transition-all duration-300`}
       >
         <div className="p-6 border-b border-gray-100 flex items-center gap-2">
           <span className="text-2xl"></span>
