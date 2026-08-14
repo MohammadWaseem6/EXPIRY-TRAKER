@@ -1,14 +1,21 @@
-/* eslint-disable no-unused-vars */
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../Context/AuthContext";
 import { apiClient } from "../api/apiClient";
 
 const Login = () => {
+  const auth = useAuth(); // 👈 Get the whole object first
+  const navigate = useNavigate();
+
+  // If auth is undefined, show a loading/error state (shouldn't happen if provider is wrapping)
+  if (!auth) {
+    return <div className="p-4 text-red-500">Auth context not available. Please refresh.</div>;
+  }
+
+  const { login } = auth; // 👈 Now destructure safely
+
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +23,7 @@ const Login = () => {
       const data = await apiClient.login(form);
       if (data.token) {
         login(data.token, data.user);
-        navigate("/");
+        navigate("/dashboard");
       } else {
         setError(data.error || "Login failed");
       }
@@ -26,12 +33,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
-        {error && (
-          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"

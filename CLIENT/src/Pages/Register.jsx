@@ -1,14 +1,25 @@
-/* eslint-disable no-unused-vars */
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../Context/AuthContext";
 import { apiClient } from "../api/apiClient";
 
 const Register = () => {
+  const auth = useAuth(); // 👈 Get the whole object first
+  const navigate = useNavigate();
+
+  // If auth is undefined, show a loading/error state
+  if (!auth) {
+    return (
+      <div className="p-4 text-red-500">
+        Auth context not available. Please refresh.
+      </div>
+    );
+  }
+
+  const { login } = auth; // 👈 Now destructure safely
+
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +27,7 @@ const Register = () => {
       const data = await apiClient.register(form);
       if (data.token) {
         login(data.token, data.user);
-        navigate("/");
+        navigate("/dashboard");
       } else {
         setError(data.error || "Registration failed");
       }
@@ -26,10 +37,12 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
-        {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
@@ -57,7 +70,7 @@ const Register = () => {
           />
           <button
             type="submit"
-            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
           >
             Register
           </button>
