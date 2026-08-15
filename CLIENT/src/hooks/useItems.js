@@ -43,10 +43,24 @@ export const useItems = () => {
       return { success: false };
     }
   };
-
+  const updateItem = async (itemId, updatedData) => {
+    try {
+      const data = await apiClient.updateItem(token, itemId, updatedData);
+      if (data.item) {
+        setItems((prev) =>
+          prev.map((item) => (item._id === itemId ? data.item : item)),
+        );
+        return { success: true };
+      }
+      return { success: false, error: data.error };
+    } catch (error) {
+      console.error("Update error:", error);
+      return { success: false, error: "Something went wrong" };
+    }
+  };
   useEffect(() => {
     fetchItems();
   }, [token]);
 
-  return { items, loading, fetchItems, addItem, deleteItem };
+  return { items, loading, fetchItems, addItem, deleteItem, updateItem };
 };
