@@ -5,7 +5,7 @@ const Home = () => {
   const { token } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-indigo-100 flex flex-col items-center justify-center p-6">
       <div className="max-w-3xl text-center">
         <h1 className="text-5xl md:text-6xl font-extrabold text-gray-800 mb-4">
           📦 Expiry Tracker
