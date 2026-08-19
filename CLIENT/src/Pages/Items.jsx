@@ -1,31 +1,25 @@
 import { useState } from "react";
-import { useAuth } from "../Context/AuthContext";   // ✅ ADD THIS
 import { useItems } from "../hooks/useItems";
 import { Search, Edit, Trash2, Plus, X } from "lucide-react";
 
 const Items = () => {
-  // ✅ Move useAuth INSIDE the component
-  const { user } = useAuth();
   const { items, deleteItem, addItem, updateItem } = useItems();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // ✅ Permission checks – moved inside component
-  const canEdit = user?.role === "admin" || user?.role === "storekeeper" || user?.role === "manager";
-  const canDelete = canEdit;
-  const canAdd = user?.role !== "viewer"; // all except viewer
-
   // Get unique categories
   const categories = ["All", ...new Set(items.map((item) => item.category))];
 
   // Filter items
   const filteredItems = items.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -51,7 +45,7 @@ const Items = () => {
     }
   };
 
-  // Add new item
+  // Add new item (quick version – you can reuse your AddItemModal)
   const handleAdd = () => {
     setShowAddModal(true);
   };
@@ -61,15 +55,12 @@ const Items = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Inventory Items</h1>
-        {/* ✅ Only show Add button if user can add */}
-        {canAdd && (
-          <button
-            onClick={handleAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            <Plus className="w-4 h-4" /> Add Item
-          </button>
-        )}
+        <button
+          onClick={handleAdd}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          <Plus className="w-4 h-4" /> Add Item
+        </button>
       </div>
 
       {/* Search & Filter */}
@@ -107,14 +98,24 @@ const Items = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Name</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Category</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Expiry</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Price</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                {canEdit && (
-                  <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
-                )}
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Name
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Category
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Expiry
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Price
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Status
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -126,41 +127,62 @@ const Items = () => {
                 </tr>
               ) : (
                 filteredItems.map((item) => {
-                  const days = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+                  const days = Math.ceil(
+                    (new Date(item.expiryDate) - new Date()) /
+                      (1000 * 60 * 60 * 24),
+                  );
                   let statusColor = "text-green-600 bg-green-50";
                   let statusText = "Fresh";
-                  if (days < 0) { statusColor = "text-red-600 bg-red-50"; statusText = "Expired"; }
-                  else if (days <= 3) { statusColor = "text-orange-600 bg-orange-50"; statusText = "⚠️ Soon"; }
+                  if (days < 0) {
+                    statusColor = "text-red-600 bg-red-50";
+                    statusText = "Expired";
+                  } else if (days <= 3) {
+                    statusColor = "text-orange-600 bg-orange-50";
+                    statusText = "⚠️ Soon";
+                  }
 
                   return (
-                    <tr key={item._id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                      <td className="py-3 px-4 font-medium text-gray-800">{item.name}</td>
-                      <td className="py-3 px-4 text-gray-600">{item.category}</td>
-                      <td className="py-3 px-4 text-gray-600">{new Date(item.expiryDate).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 text-gray-600">${item.price || "0"}</td>
-                      <td className="py-3 px-4">
-                        <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>{statusText}</span>
+                    <tr
+                      key={item._id}
+                      className="border-b border-gray-50 hover:bg-gray-50 transition"
+                    >
+                      <td className="py-3 px-4 font-medium text-gray-800">
+                        {item.name}
                       </td>
-                      {canEdit && (
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => handleEditClick(item)}
-                              className="p-1 text-gray-400 hover:text-blue-600 transition"
-                              title="Edit"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item._id)}
-                              className="p-1 text-gray-400 hover:text-red-600 transition"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      )}
+                      <td className="py-3 px-4 text-gray-600">
+                        {item.category}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">
+                        {new Date(item.expiryDate).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">
+                        ${item.price || "0"}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${statusColor}`}
+                        >
+                          {statusText}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEditClick(item)}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="p-1 text-gray-400 hover:text-red-600 transition"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
@@ -176,7 +198,10 @@ const Items = () => {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">Edit Item</h3>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -184,27 +209,35 @@ const Items = () => {
               <input
                 type="text"
                 value={editingItem.name}
-                onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                onChange={(e) =>
+                  setEditingItem({ ...editingItem, name: e.target.value })
+                }
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="Name"
               />
               <input
                 type="text"
                 value={editingItem.category}
-                onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
+                onChange={(e) =>
+                  setEditingItem({ ...editingItem, category: e.target.value })
+                }
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="Category"
               />
               <input
                 type="date"
                 value={editingItem.expiryDate?.split("T")[0] || ""}
-                onChange={(e) => setEditingItem({ ...editingItem, expiryDate: e.target.value })}
+                onChange={(e) =>
+                  setEditingItem({ ...editingItem, expiryDate: e.target.value })
+                }
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               />
               <input
                 type="number"
                 value={editingItem.price || ""}
-                onChange={(e) => setEditingItem({ ...editingItem, price: e.target.value })}
+                onChange={(e) =>
+                  setEditingItem({ ...editingItem, price: e.target.value })
+                }
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="Price ($)"
               />
@@ -212,7 +245,12 @@ const Items = () => {
                 <input
                   type="checkbox"
                   checked={editingItem.isAllergen || false}
-                  onChange={(e) => setEditingItem({ ...editingItem, isAllergen: e.target.checked })}
+                  onChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      isAllergen: e.target.checked,
+                    })
+                  }
                   className="w-4 h-4"
                 />
                 Contains allergens?
@@ -228,17 +266,23 @@ const Items = () => {
         </div>
       )}
 
-      {/* ADD MODAL – simplified, but you can import your AddItemModal component here */}
+      {/* ADD MODAL – you can reuse the existing AddItemModal here */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">Add New Item</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-sm text-gray-500">Use the "Add Item" modal from the dashboard, or rebuild it here.</p>
+            {/* We already have AddItemModal component – you can import it here instead of rewriting */}
+            <p className="text-sm text-gray-500">
+              Use the "Add Item" modal from the dashboard, or rebuild it here.
+            </p>
             <button
               onClick={() => setShowAddModal(false)}
               className="mt-4 w-full py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"

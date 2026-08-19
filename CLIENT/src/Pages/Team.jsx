@@ -67,7 +67,11 @@ const Team = () => {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
-      const data = await apiClient.updateUser(token, editingUser._id, editingUser);
+      const data = await apiClient.updateUser(
+        token,
+        editingUser._id,
+        editingUser,
+      );
       if (data.user) {
         setMessage("✅ User updated!");
         fetchUsers();
@@ -117,8 +121,8 @@ const Team = () => {
     return map[branch] || "bg-gray-100 text-gray-700";
   };
 
-  // Check if current user is admin
-  const isAdmin = user?.role === "admin";
+  // Cconst isAdmin = user?.role === "admin";heck if current user is admin
+  const isAdmin = user?.role === "admin" || user?.role === "manager";
 
   return (
     <div className="space-y-4">
@@ -147,43 +151,75 @@ const Team = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-500">User</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Email</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Branch</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Role</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  User
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Email
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Branch
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Role
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Status
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" className="text-center py-8 text-gray-400">Loading...</td></tr>
+                <tr>
+                  <td colSpan="6" className="text-center py-8 text-gray-400">
+                    Loading...
+                  </td>
+                </tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan="6" className="text-center py-8 text-gray-400">No users found</td></tr>
+                <tr>
+                  <td colSpan="6" className="text-center py-8 text-gray-400">
+                    No users found
+                  </td>
+                </tr>
               ) : (
                 users.map((u) => {
                   const isCurrentUser = u._id === user?._id;
 
                   return (
-                    <tr key={u._id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+                    <tr
+                      key={u._id}
+                      className="border-b border-gray-50 hover:bg-gray-50 transition"
+                    >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
                             {u.name?.charAt(0) || "U"}
                           </div>
                           <span className="font-medium text-gray-800">
-                            {u.name} {isCurrentUser && <span className="text-xs text-blue-500">(You)</span>}
+                            {u.name}{" "}
+                            {isCurrentUser && (
+                              <span className="text-xs text-blue-500">
+                                (You)
+                              </span>
+                            )}
                           </span>
                         </div>
                       </td>
                       <td className="py-3 px-4 text-gray-600">{u.email}</td>
                       <td className="py-3 px-4">
-                        <span className={`text-xs px-2 py-1 rounded-full ${getBranchBadge(u.branch)}`}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${getBranchBadge(u.branch)}`}
+                        >
                           {u.branch || "N/A"}
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${getRoleBadge(u.role)}`}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full capitalize ${getRoleBadge(u.role)}`}
+                        >
                           {u.role || "viewer"}
                         </span>
                       </td>
@@ -238,38 +274,53 @@ const Team = () => {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">Invite New Member</h3>
-              <button onClick={() => setShowInviteModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleInvite} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name *
+                </label>
                 <input
                   type="text"
                   value={inviteForm.name}
-                  onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setInviteForm({ ...inviteForm, name: e.target.value })
+                  }
                   required
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="e.g., Ahmed Al-Saud"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
                 <input
                   type="email"
                   value={inviteForm.email}
-                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setInviteForm({ ...inviteForm, email: e.target.value })
+                  }
                   required
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="ahmed@company.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Branch
+                </label>
                 <select
                   value={inviteForm.branch}
-                  onChange={(e) => setInviteForm({ ...inviteForm, branch: e.target.value })}
+                  onChange={(e) =>
+                    setInviteForm({ ...inviteForm, branch: e.target.value })
+                  }
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="HQ">HQ</option>
@@ -279,10 +330,14 @@ const Team = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
                 <select
                   value={inviteForm.role}
-                  onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
+                  onChange={(e) =>
+                    setInviteForm({ ...inviteForm, role: e.target.value })
+                  }
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="admin">Admin</option>
@@ -290,11 +345,16 @@ const Team = () => {
                   <option value="viewer">Viewer</option>
                 </select>
               </div>
-              <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+              <button
+                type="submit"
+                className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
                 Invite Member
               </button>
             </form>
-            <p className="text-xs text-gray-400 mt-3">A temporary password will be generated and shown after creation.</p>
+            <p className="text-xs text-gray-400 mt-3">
+              A temporary password will be generated and shown after creation.
+            </p>
           </div>
         </div>
       )}
@@ -304,17 +364,26 @@ const Team = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Edit User: {editingUser.name}</h3>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-xl font-semibold">
+                Edit User: {editingUser.name}
+              </h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleUpdateUser} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Branch
+                </label>
                 <select
                   value={editingUser.branch || "HQ"}
-                  onChange={(e) => setEditingUser({ ...editingUser, branch: e.target.value })}
+                  onChange={(e) =>
+                    setEditingUser({ ...editingUser, branch: e.target.value })
+                  }
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="HQ">HQ</option>
@@ -324,10 +393,14 @@ const Team = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
                 <select
                   value={editingUser.role || "viewer"}
-                  onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                  onChange={(e) =>
+                    setEditingUser({ ...editingUser, role: e.target.value })
+                  }
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="admin">Admin</option>
@@ -340,13 +413,21 @@ const Team = () => {
                   <input
                     type="checkbox"
                     checked={editingUser.isActive !== false}
-                    onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })}
+                    onChange={(e) =>
+                      setEditingUser({
+                        ...editingUser,
+                        isActive: e.target.checked,
+                      })
+                    }
                     className="w-4 h-4"
                   />
                   <span className="text-sm text-gray-700">Active</span>
                 </label>
               </div>
-              <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+              <button
+                type="submit"
+                className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
                 Save Changes
               </button>
             </form>
