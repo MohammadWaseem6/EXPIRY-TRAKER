@@ -21,12 +21,12 @@ const userSchema = new mongoose.Schema(
     // Role & Branch fields
     role: {
       type: String,
-      enum: ["admin", "storekeeper", "viewer"],
+      enum: ["admin", "storekeeper", "manager", "viewer"],
       default: "viewer",
     },
     branch: {
       type: String,
-      enum: ["HQ", "STC", "SPADC",],
+      enum: ["HQ", "STC", "SPADC"],
       default: "STC",
     },
     isActive: {
@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("User", userSchema);
