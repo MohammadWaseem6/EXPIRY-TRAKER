@@ -44,13 +44,14 @@ const Team = () => {
     fetchUsers();
   }, []);
 
-  // Invite user
+  // Invite user – now shows email sent message
   const handleInvite = async (e) => {
     e.preventDefault();
     try {
       const data = await apiClient.inviteUser(token, inviteForm);
       if (data.user) {
-        setMessage(`✅ User invited! Temp password: ${data.tempPassword}`);
+        // ✅ Updated message – no more password shown on screen
+        setMessage(data.message || "✅ Invitation sent successfully!");
         setInviteForm({ name: "", email: "", role: "viewer", branch: "HQ" });
         fetchUsers();
         setShowInviteModal(false);
@@ -105,6 +106,7 @@ const Team = () => {
     const map = {
       admin: "bg-purple-100 text-purple-700",
       storekeeper: "bg-blue-100 text-blue-700",
+      manager: "bg-indigo-100 text-indigo-700",
       viewer: "bg-gray-100 text-gray-700",
     };
     return map[role] || map.viewer;
@@ -121,7 +123,7 @@ const Team = () => {
     return map[branch] || "bg-gray-100 text-gray-700";
   };
 
-  // Cconst isAdmin = user?.role === "admin";heck if current user is admin
+  // Check if current user is admin or manager
   const isAdmin = user?.role === "admin" || user?.role === "manager";
 
   return (
@@ -341,6 +343,7 @@ const Team = () => {
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
                   <option value="storekeeper">Storekeeper</option>
                   <option value="viewer">Viewer</option>
                 </select>
@@ -353,7 +356,7 @@ const Team = () => {
               </button>
             </form>
             <p className="text-xs text-gray-400 mt-3">
-              A temporary password will be generated and shown after creation.
+              An email with a temporary password will be sent to the user.
             </p>
           </div>
         </div>
@@ -404,6 +407,7 @@ const Team = () => {
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
                   <option value="storekeeper">Storekeeper</option>
                   <option value="viewer">Viewer</option>
                 </select>

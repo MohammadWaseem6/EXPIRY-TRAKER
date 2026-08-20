@@ -1,14 +1,23 @@
 require("dotenv").config();
-const { Resend } = require("resend");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const sendInvitationEmail = async (to, name, role, tempPassword, branch) => {
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-      <h2 style="color: #2563eb;"> Expiry Tracker</h2>
+      <h2 style="color: #2563eb;">📦 Expiry Tracker</h2>
       <h3>Welcome, ${name}!</h3>
       <p>You have been invited to join <strong>Expiry Tracker</strong> as a <strong>${role}</strong>.</p>
       <p><strong>Branch:</strong> ${branch}</p>
@@ -30,20 +39,16 @@ const sendInvitationEmail = async (to, name, role, tempPassword, branch) => {
     </div>
   `;
 
+  const mailOptions = {
+    from: `"Expiry Tracker" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: `You have been invited to Expiry Tracker (${role})`,
+    html: htmlContent,
+  };
+
   try {
-    const { data, error } = await resend.emails.send({
-      from: `Expiry Tracker <${process.env.EMAIL_USER}>`,
-      to: [to],
-      subject: `You have been invited to Expiry Tracker (${role})`,
-      html: htmlContent,
-    });
-
-    if (error) {
-      console.error("❌ Resend error:", error);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`✅ Invitation email sent to ${to}`);
+    await transporter.sendMail(mailOptions);
+    console.log(` Invitation email sent to ${to}`);
     return { success: true };
   } catch (error) {
     console.error("❌ Email send error:", error);
