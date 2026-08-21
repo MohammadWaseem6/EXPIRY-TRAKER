@@ -12,6 +12,10 @@ import Team from "./Pages/Team";
 import Favorites from "./Pages/Favorites";
 import Calendar from "./Pages/Calendar";
 import Settings from "./Pages/Settings";
+import StockingRequests from "./Pages/StockingRequests";
+import CreateStockRequest from "./Pages/CreateStockRequest";
+import PendingStockRequests from "./Pages/PendingStockRequests";
+import MyStockRequests from "./Pages/MyStockRequests";
 
 function App() {
   return (
@@ -38,6 +42,13 @@ function App() {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/stocking-requests" element={<StockingRequests />} />
+            <Route path="/request-stock" element={<CreateStockRequest />} />
+            <Route
+              path="/pending-requests"
+              element={<PendingStockRequests />}
+            />
+            <Route path="/my-requests" element={<MyStockRequests />} />
           </Route>
         </Routes>
       </AuthProvider>

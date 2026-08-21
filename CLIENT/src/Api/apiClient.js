@@ -5,6 +5,53 @@ if (!BASE_URL) {
 }
 
 export const apiClient = {
+  // ===== STOCK REQUESTS =====
+createStockRequest: (token, data) =>
+  fetch(`${BASE_URL}/stock-requests`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  }).then((res) => res.json()),
+
+getPendingStockRequests: (token) =>
+  fetch(`${BASE_URL}/stock-requests/pending`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((res) => res.json()),
+
+getMyStockRequests: (token) =>
+  fetch(`${BASE_URL}/stock-requests/my`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((res) => res.json()),
+
+approveStockRequest: (token, requestId) =>
+  fetch(`${BASE_URL}/stock-requests/${requestId}/approve`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res) => res.json()),
+
+rejectStockRequest: (token, requestId) =>
+  fetch(`${BASE_URL}/stock-requests/${requestId}/reject`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res) => res.json()),
+
+completeStockRequest: (token, requestId) =>
+  fetch(`${BASE_URL}/stock-requests/${requestId}/complete`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res) => res.json()),
   // ===== AUTH =====
   register: (userData) =>
     fetch(`${BASE_URL}/auth/register`, {
@@ -83,4 +130,47 @@ export const apiClient = {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => res.json()),
+
+    // Stocking Requests
+getStockingRequests: (token) =>
+  fetch(`${BASE_URL}/stocking-requests`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((res) => res.json()),
+
+createStockingRequest: (token, data) =>
+  fetch(`${BASE_URL}/stocking-requests`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  }).then((res) => res.json()),
+
+acceptStockingRequest: (token, requestId) =>
+  fetch(`${BASE_URL}/stocking-requests/${requestId}/accept`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res) => res.json()),
+
+completeStockingRequest: (token, requestId) =>
+  fetch(`${BASE_URL}/stocking-requests/${requestId}/complete`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res) => res.json()),
+
+cancelStockingRequest: (token, requestId) =>
+  fetch(`${BASE_URL}/stocking-requests/${requestId}/cancel`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res) => res.json()),
 };

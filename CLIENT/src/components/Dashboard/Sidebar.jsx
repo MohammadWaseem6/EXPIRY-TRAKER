@@ -8,8 +8,11 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  ClipboardList,
+  Send,          
+  Clock,          
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";   // ✅ Added useLocation
+import { Link, useLocation } from "react-router-dom";
 
 const Sidebar = ({
   sidebarOpen,
@@ -20,8 +23,16 @@ const Sidebar = ({
   user,
   logout,
 }) => {
-  const location = useLocation();   // ✅ Get current path
+  const location = useLocation();
   const isDashboard = location.pathname === "/dashboard";
+
+  // Helper for link classes
+  const linkClass = (isActive = false) =>
+    `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition ${
+      isActive
+        ? "bg-blue-50 text-blue-700"
+        : "text-gray-700 hover:bg-gray-100"
+    } ${!sidebarOpen && "justify-center"}`;
 
   return (
     <aside
@@ -39,56 +50,67 @@ const Sidebar = ({
           </div>
         )}
 
-        {/* ✅ Dashboard – conditional */}
+        {/* Dashboard */}
         {isDashboard ? (
-          <span
-            className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 ${!sidebarOpen && "justify-center"}`}
-          >
+          <span className={linkClass(true)}>
             <LayoutDashboard className="w-4 h-4 mr-3" />
             {sidebarOpen && "Dashboard"}
           </span>
         ) : (
-          <Link
-            to="/dashboard"
-            className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 ${!sidebarOpen && "justify-center"}`}
-          >
+          <Link to="/dashboard" className={linkClass()}>
             <LayoutDashboard className="w-4 h-4 mr-3" />
             {sidebarOpen && "Dashboard"}
           </Link>
         )}
 
-        {/* ✅ Items Link */}
-        <Link
-          to="/items"
-          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 ${!sidebarOpen && "justify-center"}`}
-        >
+        {/* Items */}
+        <Link to="/items" className={linkClass()}>
           <Package className="w-4 h-4 mr-3" />
           {sidebarOpen && "Items"}
         </Link>
 
-        {/* ✅ Orders Link */}
-        <Link
-          to="/orders"
-          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 ${!sidebarOpen && "justify-center"}`}
-        >
+        {/* ===== STOREKEEPER LINKS ===== */}
+        {user?.role === "storekeeper" && (
+          <>
+            <Link to="/request-stock" className={linkClass()}>
+              <Send className="w-4 h-4 mr-3" />
+              {sidebarOpen && "Request Stock"}
+            </Link>
+            <Link to="/my-requests" className={linkClass()}>
+              <ClipboardList className="w-4 h-4 mr-3" />
+              {sidebarOpen && "My Requests"}
+            </Link>
+          </>
+        )}
+
+        {/* ===== MANAGER / ADMIN LINKS ===== */}
+        {(user?.role === "manager" || user?.role === "admin") && (
+          <Link to="/pending-requests" className={linkClass()}>
+            <Clock className="w-4 h-4 mr-3" />
+            {sidebarOpen && "Pending Requests"}
+          </Link>
+        )}
+
+        {/* Stocking Requests (all roles) */}
+        <Link to="/stocking-requests" className={linkClass()}>
+          <ClipboardList className="w-4 h-4 mr-3" />
+          {sidebarOpen && "Stocking Requests"}
+        </Link>
+
+        {/* Orders */}
+        <Link to="/orders" className={linkClass()}>
           <ShoppingBag className="w-4 h-4 mr-3" />
           {sidebarOpen && "Orders"}
         </Link>
 
-        {/* ✅ Team Link */}
-        <Link
-          to="/team"
-          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 ${!sidebarOpen && "justify-center"}`}
-        >
+        {/* Team */}
+        <Link to="/team" className={linkClass()}>
           <Users className="w-4 h-4 mr-3" />
           {sidebarOpen && "Team"}
         </Link>
 
-        {/* ✅ Favorites Link */}
-        <Link
-          to="/favorites"
-          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 ${!sidebarOpen && "justify-center"}`}
-        >
+        {/* Favorites */}
+        <Link to="/favorites" className={linkClass()}>
           <Star className="w-4 h-4 mr-3" />
           {sidebarOpen && "Favorites"}
         </Link>
@@ -99,25 +121,19 @@ const Sidebar = ({
           </div>
         )}
 
-        {/* ✅ Calendar Link */}
-        <Link
-          to="/calendar"
-          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 ${!sidebarOpen && "justify-center"}`}
-        >
+        {/* Calendar */}
+        <Link to="/calendar" className={linkClass()}>
           <Calendar className="w-4 h-4 mr-3" />
           {sidebarOpen && "Calendar"}
         </Link>
 
-        {/* ✅ Settings Link */}
-        <Link
-          to="/settings"
-          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 ${!sidebarOpen && "justify-center"}`}
-        >
+        {/* Settings */}
+        <Link to="/settings" className={linkClass()}>
           <Settings className="w-4 h-4 mr-3" />
           {sidebarOpen && "Settings"}
         </Link>
 
-        {/* Categories (still buttons – they filter the dashboard) */}
+        {/* Categories */}
         {sidebarOpen && (
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">
             Categories
@@ -153,12 +169,8 @@ const Sidebar = ({
               {user?.name?.charAt(0) || "A"}
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700">
-                {user?.name || "Admin"}
-              </p>
-              <p className="text-xs text-gray-500">
-                {user?.email || "admin@company.com"}
-              </p>
+              <p className="text-sm font-medium text-gray-700">{user?.name || "Admin"}</p>
+              <p className="text-xs text-gray-500">{user?.email || "admin@company.com"}</p>
             </div>
           </div>
           <button

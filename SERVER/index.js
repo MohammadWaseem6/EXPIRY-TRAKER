@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 const userRoutes = require("./routes/userRoutes");
+const stockRequestRoutes = require("./routes/stockingRequestRoutes");
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/stock-requests", stockRequestRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running!" });
