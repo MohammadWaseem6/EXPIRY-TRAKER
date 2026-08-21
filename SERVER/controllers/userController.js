@@ -1,54 +1,122 @@
-require("dotenv").config();
-const { Resend } = require("resend");
+const User = require("../models/User");
+const bcrypt = require("bcrypt");
+const { sendInvitationEmail } = require("../utils/emailServices"); 
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const sendInvitationEmail = async (to, name, role, tempPassword, branch) => {
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-
-  const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-      <h2 style="color: #2563eb;"> Expiry Tracker</h2>
-      <h3>Welcome, ${name}!</h3>
-      <p>You have been invited to join <strong>Expiry Tracker</strong> as a <strong>${role}</strong>.</p>
-      <p><strong>Branch:</strong> ${branch}</p>
-      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
-        <p style="margin: 0;"><strong>Your temporary password:</strong></p>
-        <p style="font-size: 24px; font-weight: bold; color: #2563eb; margin: 5px 0;">${tempPassword}</p>
-      </div>
-      <p>Please login using your email and the password above.</p>
-      <a href="${frontendUrl}/login" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
-        Login to Expiry Tracker
-      </a>
-      <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">
-        We recommend changing your password after your first login.
-      </p>
-      <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
-      <p style="font-size: 12px; color: #9ca3af;">
-        This is an automated message. Please do not reply to this email.
-      </p>
-    </div>
-  `;
-
+// Get all users (Admin only)
+const getUsers = async (req, res) => {
   try {
-    const { data, error } = await resend.emails.send({
-      from: `Expiry Tracker <${process.env.EMAIL_USER}>`,
-      to: [to],
-      subject: `You have been invited to Expiry Tracker (${role})`,
-      html: htmlContent,
-    });
-
-    if (error) {
-      console.error("❌ Resend error:", error);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`✅ Invitation email sent to ${to}`);
-    return { success: true };
+    const users = await User.find().select("-password_hash");
+    res.json(users);
   } catch (error) {
-    console.error("❌ Email send error:", error);
-    return { success: false, error: error.message };
+    console.error("Get users error:", error);
+    res.status(500).json({ error: "Server error while fetching users" });
   }
 };
 
-module.exports = { sendInvitationEmail };
+// Update a user (Admin only)
+const updateUser = async (req, res) => {
+  try {
+    const { role, branch, isActive } = req.body;
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (role) user.role = role;
+    if (branch) user.branch = branch;
+    if (isActive !== undefined) user.isActive = isActive;
+
+    await user.save();
+
+    const updatedUser = await User.findById(req.params.id).select("-password_hash");
+    res.json({ message: "User updated successfully", user: updatedUser });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(500).json({ error: "Server error while updating user" });
+  }
+};
+
+// Delete a user (Admin only – prevent deleting yourself)
+const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: "You cannot delete yourself" });
+    }
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    res.status(500).json({ error: "Server error while deleting user" });
+  }
+};
+
+// Invite new user (Admin only – sends email with temporary password)
+const inviteUser = async (req, res) => {
+  try {
+    const { name, email, role, branch } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ error: "Name and email are required" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const tempPassword = Math.random().toString(36).slice(-8);
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(tempPassword, saltRounds);
+
+    const user = await User.create({
+      name,
+      email,
+      password_hash,
+      role: role || "viewer",
+      branch: branch || "HQ",
+      isActive: true,
+    });
+
+    // Send invitation email
+    const emailResult = await sendInvitationEmail(
+      email,
+      name,
+      user.role,
+      tempPassword,
+      user.branch
+    );
+
+    if (!emailResult.success) {
+      console.warn("⚠️ Email failed but user was created:", emailResult.error);
+      return res.status(201).json({
+        message: "User created, but email could not be sent. Check email settings.",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          branch: user.branch,
+        },
+      });
+    }
+
+    const newUser = await User.findById(user._id).select("-password_hash");
+    res.status(201).json({
+      message: `✅ Invitation sent to ${email}`,
+      user: newUser,
+    });
+  } catch (error) {
+    console.error("Invite user error:", error);
+    res.status(500).json({ error: "Server error while inviting user" });
+  }
+};
+
+module.exports = { getUsers, updateUser, deleteUser, inviteUser };
