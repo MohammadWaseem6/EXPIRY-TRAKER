@@ -1,5 +1,1 @@
 @import "tailwindcss";
-
-.bg-dashboard {
-  background-color: #f3f4f6 !important;  /* gray-50 equivalent */
-}
