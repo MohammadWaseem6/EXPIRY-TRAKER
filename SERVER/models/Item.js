@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const itemSchema = new mongoose.Schema(
@@ -16,6 +17,14 @@ const itemSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    quantity: {
+      type: Number,
+      default: 0,
+    },
+    price: {
+      type: Number,
+      default: 0,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -24,7 +33,7 @@ const itemSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 module.exports = mongoose.model("Item", itemSchema);

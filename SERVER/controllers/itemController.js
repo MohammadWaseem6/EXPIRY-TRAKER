@@ -6,9 +6,8 @@ const createItem = async (req, res) => {
     console.log("Creating item with user:", req.user);
     console.log("Body:", req.body);
 
-    const { name, category, expiryDate } = req.body;
+    const { name, category, expiryDate, quantity, price } = req.body;
 
-    // ✅ Fixed: correct validation
     if (!name || !category || !expiryDate) {
       return res.status(400).json({
         error: "Name, category, and expiry date are required",
@@ -17,8 +16,10 @@ const createItem = async (req, res) => {
 
     const item = await Item.create({
       name,
-      category,       // ✅ fixed spelling
+      category,
       expiryDate,
+      quantity: quantity || 0,
+      price: price || 0,
       user: req.user.id,
     });
 
@@ -33,13 +34,13 @@ const createItem = async (req, res) => {
 };
 
 // GET ALL ITEMS
-const getItems = async (req, res) => {  // ✅ fixed: 'res' not 'rea'
+const getItems = async (req, res) => {
   try {
     const items = await Item.find({
       user: req.user.id,
     }).sort({ expiryDate: 1 });
 
-    res.json(items);  // ✅ fixed: 'items' not 'item'
+    res.json(items);
   } catch (error) {
     console.error("Get items error:", error);
     res.status(500).json({ error: "Server error while fetching items" });
@@ -49,7 +50,7 @@ const getItems = async (req, res) => {  // ✅ fixed: 'res' not 'rea'
 // DELETE ITEM
 const deleteItem = async (req, res) => {
   try {
-    const item = await Item.findOneAndDelete({  // ✅ fixed: added 'await'
+    const item = await Item.findOneAndDelete({
       _id: req.params.id,
       user: req.user.id,
     });
@@ -70,12 +71,11 @@ const deleteItem = async (req, res) => {
 };
 
 // UPDATE ITEM
-const updateItem = async (req, res) => {  // ✅ renamed to 'updateItem' (consistent)
+const updateItem = async (req, res) => {
   try {
-    const { name, category, expiryDate } = req.body;  // ✅ fixed spelling
+    const { name, category, expiryDate } = req.body;
     const itemId = req.params.id;
 
-    // ✅ Fixed: use Item.findOne (not user.findOne)
     const item = await Item.findOne({ _id: itemId, user: req.user.id });
 
     if (!item) {
@@ -86,7 +86,7 @@ const updateItem = async (req, res) => {  // ✅ renamed to 'updateItem' (consis
 
     // Update only the fields that are provided
     if (name) item.name = name;
-    if (category) item.category = category;  // ✅ fixed spelling
+    if (category) item.category = category; // ✅ fixed spelling
     if (expiryDate) item.expiryDate = expiryDate;
 
     await item.save();
@@ -101,4 +101,4 @@ const updateItem = async (req, res) => {  // ✅ renamed to 'updateItem' (consis
   }
 };
 
-module.exports = { createItem, getItems, deleteItem, updateItem };  // ✅ consistent naming
+module.exports = { createItem, getItems, deleteItem, updateItem }; // ✅ consistent naming
