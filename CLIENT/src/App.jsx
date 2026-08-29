@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import Register from "./pages/Register";
-// import Stock from "./pages/Stock";
+import Dashboard from "./pages/Dashboard";
+import Reports from "./pages/Reports";
+import Charts from "./pages/Charts";
+
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -17,9 +19,11 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          {/* <Route path="stock" element={<Stock />} /> */}
+
+          {/* Protected routes */}
           <Route
             path="/dashboard"
             element={
@@ -28,6 +32,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
+
+          {/* Catch all */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>
