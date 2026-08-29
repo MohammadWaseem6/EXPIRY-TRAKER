@@ -1,5 +1,5 @@
 const StockingRequest = require("../models/StockingRequest");
-const User = require("../models/User"); 
+const User = require("../models/User");
 
 // Storekeeper creates a stock request
 const createStockRequest = async (req, res) => {

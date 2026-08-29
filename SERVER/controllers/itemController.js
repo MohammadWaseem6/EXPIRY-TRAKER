@@ -3,30 +3,32 @@ const Item = require("../models/Item");
 // CREATE ITEM
 const createItem = async (req, res) => {
   try {
-    console.log("Creating item with user:", req.user);
-    console.log("Body:", req.body);
-
-    const { name, category, expiryDate, quantity, price } = req.body;
-
-    if (!name || !category || !expiryDate) {
-      return res.status(400).json({
-        error: "Name, category, and expiry date are required",
-      });
-    }
-
-    const item = await Item.create({
+    const {
       name,
       category,
       expiryDate,
-      quantity: quantity || 0,
+      purchaseDate,
+      quantity,
+      price,
+      unit,
+      isAllergen,
+      source,
+    } = req.body;
+
+    const item = await Item.create({
+      name: name || "Unknown",
+      category: category || "Uncategorized",
+      expiryDate: expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      purchaseDate: purchaseDate || new Date(),
+      quantity: quantity || 1,
       price: price || 0,
+      unit: unit || "",
+      isAllergen: isAllergen || false,
+      source: source || "manual",
       user: req.user.id,
     });
 
-    res.status(201).json({
-      message: "Item Created Successfully!",
-      item,
-    });
+    res.status(201).json({ message: "Item Created Successfully!", item });
   } catch (error) {
     console.error("Create item error:", error);
     res.status(500).json({ error: "Server error while creating item" });

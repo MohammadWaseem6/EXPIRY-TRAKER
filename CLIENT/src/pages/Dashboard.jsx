@@ -6,7 +6,6 @@ import { apiClient } from "../api/apiClient";
 import {
   Package,
   AlertTriangle,
-  
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -25,6 +24,7 @@ import {
   List,
   Copy,
 } from "lucide-react";
+import AIChatbot from "./AIChatbot";
 
 // ---------- palette (dark theme) ----------
 const COLORS = {
@@ -64,6 +64,9 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [bulkItems, setBulkItems] = useState("");
   const [bulkMessage, setBulkMessage] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiItems, setAiItems] = useState([]);
+  const [aiError, setAiError] = useState("");
 
   useEffect(() => {
     if (token) {
@@ -228,11 +231,46 @@ const Dashboard = () => {
         console.error("Failed to add item:", item, err);
       }
     }
-    setBulkMessage(`✅ ${success} items added successfully!`);
+    setBulkMessage(` ${success} items added successfully!`);
     setBulkItems("");
     const updated = await apiClient.getItems(token);
     if (Array.isArray(updated)) setItems(updated);
     setTimeout(() => setBulkMessage(""), 4000);
+  };
+
+  // ---------- AI upload handler ----------
+  const handleAIUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setAiLoading(true);
+    setAiError("");
+    setAiItems([]);
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(`http://127.0.0.1:5001/api/ai/extract-items`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setAiItems(data.items);
+      } else {
+        setAiError(data.error || "Failed to extract items");
+      }
+    } catch (error) {
+      setAiError("Upload failed. Please try again.");
+    } finally {
+      setAiLoading(false);
+      e.target.value = "";
+    }
   };
 
   // ---------- shared donut renderer ----------
@@ -652,7 +690,7 @@ const Dashboard = () => {
                     </span>
                   </div>
                 </Panel>
-                // eslint-disable-next-line react-hooks/static-components
+
                 <Panel>
                   <Eyebrow>LOW STOCK ALERTS</Eyebrow>
                   <div className="flex items-center gap-2">
@@ -947,11 +985,75 @@ const Dashboard = () => {
               📋 Bulk Add Items
             </h1>
             <p className="text-sm mt-2" style={{ color: COLORS.sub }}>
-              Paste items in the format:{" "}
-              <span className="text-blue-400">
-                Name, Category, ExpiryDate, Quantity, Price
-              </span>
+              Paste items manually or upload a delivery note image to auto-extract items.
             </p>
+
+            {/* AI Upload Section */}
+            <div
+              className="mt-4 p-4 rounded-xl"
+              style={{ background: COLORS.panel, border: `1px solid ${COLORS.panelBorder}` }}
+            >
+              <div className="flex items-center gap-4 flex-wrap">
+                <label
+                  className="cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition"
+                  style={{ background: COLORS.active, color: "#fff" }}
+                >
+                  📤 Upload Delivery Note
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAIUpload}
+                  />
+                </label>
+                {aiLoading && (
+                  <span className="text-sm" style={{ color: COLORS.sub }}>
+                    ⏳ Extracting items...
+                  </span>
+                )}
+                {aiError && (
+                  <span className="text-sm" style={{ color: "#c23e8f" }}>
+                    {aiError}
+                  </span>
+                )}
+              </div>
+
+              {aiItems.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium" style={{ color: COLORS.text }}>
+                      ✅ {aiItems.length} items extracted
+                    </span>
+                    <button
+                      onClick={() => {
+                        const csv = aiItems.map(i =>
+                          `${i.name}, ${i.category}, ${i.expiryDate}, ${i.quantity}, ${i.price}`
+                        ).join("\n");
+                        setBulkItems(csv);
+                        setAiItems([]);
+                      }}
+                      className="px-3 py-1 text-xs rounded-lg transition"
+                      style={{ background: COLORS.active, color: "#fff" }}
+                    >
+                      Copy to Bulk Add →
+                    </button>
+                  </div>
+                  <div className="mt-2 max-h-40 overflow-y-auto">
+                    {aiItems.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="text-xs py-1 border-b"
+                        style={{ borderColor: COLORS.panelBorder, color: COLORS.sub }}
+                      >
+                        {item.name} — {item.category} — {item.expiryDate} — Qty: {item.quantity} — ${item.price}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bulk Add Textarea */}
             <div
               className="mt-4"
               style={{
@@ -1022,6 +1124,9 @@ const Dashboard = () => {
           </div>
         )}
       </main>
+       <AIChatbot onItemsExtracted={(items) => {
+          console.log("Items extracted:", items);
+        }} />
     </div>
   );
 };
