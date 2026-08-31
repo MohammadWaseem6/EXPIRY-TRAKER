@@ -65,6 +65,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsView />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/login" replace />} />
