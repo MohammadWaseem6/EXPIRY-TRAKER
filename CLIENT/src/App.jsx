@@ -5,7 +5,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import Charts from "./pages/Charts";
-
+import SettingsView from "./pages/SettingsView";
+import ExpiredView from "./pages/ExpiredView";
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -40,7 +41,30 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
+          <Route
+            path="/charts"
+            element={
+              <ProtectedRoute>
+                <Charts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expired"
+            element={
+              <ProtectedRoute>
+                <ExpiredView />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/login" replace />} />

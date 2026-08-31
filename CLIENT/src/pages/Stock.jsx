@@ -112,7 +112,7 @@ const Stock = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: COLORS.text }}>
-            📦 Stock Overview
+             Stock Overview
           </h1>
           <p className="text-sm" style={{ color: COLORS.sub }}>
             Manage your inventory items
