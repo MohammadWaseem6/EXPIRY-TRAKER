@@ -32,18 +32,7 @@ import ValueCard from "../components/dashboard/ValueCard";
 import ExpiredView from "./ExpiredView";
 
 // Import your actual Settings component
-import SettingsView from "./SettingsView";// MAKE SURE THIS PATH IS CORRECT
-
-// ---------- palette ----------
-const COLORS = {
-  bg: "#0a1a2f",
-  panel: "#0f2540",
-  panelBorder: "#1c3a5e",
-  text: "#e8eef7",
-  sub: "#7f97b8",
-  grid: "#1c3a5e",
-  active: "#4a9fdb",
-};
+import SettingsView from "./SettingsView"; // MAKE SURE THIS PATH IS CORRECT
 
 const daysUntil = (dateStr) =>
   Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
@@ -104,21 +93,28 @@ const Dashboard = () => {
     };
   }, [items]);
 
-  // ---------- trend ----------
+  // ---------- trend (Exact Date Based: 14 days back, today, 14 days forward) ----------
   const trend = useMemo(() => {
-    const days = [...Array(8)].map((_, idx) => {
-      const target = new Date();
-      target.setDate(target.getDate() + idx);
+    const today = new Date();
+    const days = [];
+    
+    for (let i = -14; i <= 14; i++) {
+      const target = new Date(today);
+      target.setDate(today.getDate() + i);
+      
       const label = target.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       });
+
       const count = items.filter((i) => {
         const d = new Date(i.expiryDate);
         return d.toDateString() === target.toDateString();
       }).length;
-      return { label, count };
-    });
+
+      days.push({ label, count });
+    }
+    
     const max = Math.max(1, ...days.map((d) => d.count));
     return { days, max };
   }, [items]);
@@ -303,33 +299,23 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div
-        className="flex items-center justify-center h-64"
-        style={{ background: COLORS.bg }}
-      >
+      <div className="flex items-center justify-center h-64 bg-custom-bg">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: COLORS.bg }}>
+    <div className="flex min-h-screen bg-custom-bg">
       {/* ===== SIDEBAR ===== */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} flex flex-col transition-all duration-300 flex-shrink-0 border-r`}
-        style={{ background: COLORS.panel, borderColor: COLORS.panelBorder }}
+        className={`${sidebarOpen ? "w-64" : "w-20"} flex flex-col transition-all duration-300 flex-shrink-0 border-r bg-custom-panel border-custom-border`}
       >
-        <div
-          className="flex items-center justify-between p-4 border-b"
-          style={{ borderColor: COLORS.panelBorder }}
-        >
+        <div className="flex items-center justify-between p-4 border-b border-custom-border">
           <div className="flex items-center gap-2">
             <Package className="w-6 h-6 text-blue-400" />
             {sidebarOpen && (
-              <span
-                className="text-lg font-bold"
-                style={{ color: COLORS.text }}
-              >
+              <span className="text-lg font-bold text-custom-text">
                 Store
               </span>
             )}
@@ -339,9 +325,9 @@ const Dashboard = () => {
             className="p-1 rounded-lg hover:bg-white/10"
           >
             {sidebarOpen ? (
-              <X className="w-5 h-5" style={{ color: COLORS.sub }} />
+              <X className="w-5 h-5 text-custom-sub" />
             ) : (
-              <Menu className="w-5 h-5" style={{ color: COLORS.sub }} />
+              <Menu className="w-5 h-5 text-custom-sub" />
             )}
           </button>
         </div>
@@ -354,11 +340,8 @@ const Dashboard = () => {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full ${
                 activeTab === item.id
                   ? "bg-blue-600/20 text-blue-400"
-                  : "hover:bg-white/5"
+                  : "hover:bg-white/5 text-custom-sub"
               } ${!sidebarOpen && "justify-center"}`}
-              style={{
-                color: activeTab === item.id ? COLORS.active : COLORS.sub,
-              }}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               {sidebarOpen && <span>{item.label}</span>}
@@ -366,34 +349,28 @@ const Dashboard = () => {
           ))}
           <RouterLink
             to="/reports"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 text-custom-sub ${
               !sidebarOpen && "justify-center"
             }`}
-            style={{ color: COLORS.sub }}
           >
             <FileSpreadsheet className="w-5 h-5 flex-shrink-0" />
             {sidebarOpen && <span>Reports</span>}
           </RouterLink>
           <RouterLink
             to="/charts"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 text-custom-sub ${
               !sidebarOpen && "justify-center"
             }`}
-            style={{ color: COLORS.sub }}
           >
             <BarChart3 className="w-5 h-5 flex-shrink-0" />
             {sidebarOpen && <span>Charts</span>}
           </RouterLink>
         </nav>
 
-        <div
-          className="p-4 border-t"
-          style={{ borderColor: COLORS.panelBorder }}
-        >
+        <div className="p-4 border-t border-custom-border">
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5"
-            style={{ color: COLORS.sub }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 text-custom-sub"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             {sidebarOpen && <span>Logout</span>}
@@ -402,10 +379,7 @@ const Dashboard = () => {
       </aside>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main
-        className="flex-1 overflow-y-auto p-4 md:p-6"
-        style={{ background: COLORS.bg }}
-      >
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-custom-bg">
         {activeTab === "dashboard" && (
           <>
             <DashboardHeader
@@ -416,33 +390,16 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               <Panel>
-                <Eyebrow right="Next 8 days">EXPIRING THIS WEEK</Eyebrow>
+                <Eyebrow right="29-day timeline">EXPIRY TIMELINE</Eyebrow>
                 <div className="flex items-end gap-2 mb-2">
-                  <span
-                    className="text-4xl font-bold"
-                    style={{ color: COLORS.text }}
-                  >
+                  <span className="text-4xl font-bold text-custom-text">
                     {trend.days.reduce((s, d) => s + d.count, 0)}
                   </span>
-                  <span
-                    className="flex items-center gap-1 text-xs px-2 py-1 rounded"
-                    style={{
-                      background: "rgba(194,62,143,0.15)",
-                      color: "#e05fae",
-                    }}
-                  >
+                  <span className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-[rgba(194,62,143,0.15)] text-[#e05fae]">
                     {stats.expiringSoon} due in 3 days
                   </span>
                 </div>
                 <TrendChart data={trend.days} max={trend.max} />
-                <div
-                  className="flex justify-between text-[10px] mt-1"
-                  style={{ color: COLORS.sub }}
-                >
-                  {trend.days.map((d, idx) => (
-                    <span key={idx}>{d.label}</span>
-                  ))}
-                </div>
               </Panel>
 
               <Panel>
@@ -479,33 +436,29 @@ const Dashboard = () => {
 
         {activeTab === "stock" && (
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: COLORS.text }}>
+            <h1 className="text-2xl font-bold text-custom-text">
               📦 Stock Overview
             </h1>
-            <p className="text-sm mt-2" style={{ color: COLORS.sub }}>
+            <p className="text-sm mt-2 text-custom-sub">
               All inventory items with quantity and status
             </p>
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((item) => (
                 <div
                   key={item._id}
-                  className="rounded-xl p-4"
-                  style={{
-                    background: COLORS.panel,
-                    border: `1px solid ${COLORS.panelBorder}`,
-                  }}
+                  className="rounded-xl p-4 bg-custom-panel border border-custom-border"
                 >
-                  <h3 className="font-semibold" style={{ color: COLORS.text }}>
+                  <h3 className="font-semibold text-custom-text">
                     {item.name}
                   </h3>
-                  <p className="text-sm" style={{ color: COLORS.sub }}>
+                  <p className="text-sm text-custom-sub">
                     {item.category}
                   </p>
                   <div className="flex justify-between mt-2">
-                    <span className="text-sm" style={{ color: COLORS.sub }}>
+                    <span className="text-sm text-custom-sub">
                       Qty: {item.quantity || 0}
                     </span>
-                    <span className="text-sm" style={{ color: COLORS.sub }}>
+                    <span className="text-sm text-custom-sub">
                       ${item.price || 0}
                     </span>
                   </div>
@@ -519,25 +472,16 @@ const Dashboard = () => {
 
         {activeTab === "bulk" && (
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: COLORS.text }}>
+            <h1 className="text-2xl font-bold text-custom-text">
               📋 Bulk Add Items
             </h1>
-            <p className="text-sm mt-2" style={{ color: COLORS.sub }}>
+            <p className="text-sm mt-2 text-custom-sub">
               Paste items manually or upload a delivery note image to
               auto-extract items.
             </p>
-            <div
-              className="mt-4 p-4 rounded-xl"
-              style={{
-                background: COLORS.panel,
-                border: `1px solid ${COLORS.panelBorder}`,
-              }}
-            >
+            <div className="mt-4 p-4 rounded-xl bg-custom-panel border border-custom-border">
               <div className="flex items-center gap-4 flex-wrap">
-                <label
-                  className="cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition"
-                  style={{ background: COLORS.active, color: "#fff" }}
-                >
+                <label className="cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition bg-custom-active text-white">
                   📤 Upload Delivery Note
                   <input
                     type="file"
@@ -547,12 +491,12 @@ const Dashboard = () => {
                   />
                 </label>
                 {aiLoading && (
-                  <span className="text-sm" style={{ color: COLORS.sub }}>
+                  <span className="text-sm text-custom-sub">
                     ⏳ Extracting items...
                   </span>
                 )}
                 {aiError && (
-                  <span className="text-sm" style={{ color: "#c23e8f" }}>
+                  <span className="text-sm text-[#c23e8f]">
                     {aiError}
                   </span>
                 )}
@@ -560,10 +504,7 @@ const Dashboard = () => {
               {aiItems.length > 0 && (
                 <div className="mt-3">
                   <div className="flex justify-between items-center">
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: COLORS.text }}
-                    >
+                    <span className="text-sm font-medium text-custom-text">
                       ✅ {aiItems.length} items extracted
                     </span>
                     <button
@@ -577,8 +518,7 @@ const Dashboard = () => {
                         setBulkItems(csv);
                         setAiItems([]);
                       }}
-                      className="px-3 py-1 text-xs rounded-lg transition"
-                      style={{ background: COLORS.active, color: "#fff" }}
+                      className="px-3 py-1 text-xs rounded-lg transition bg-custom-active text-white"
                     >
                       Copy to Bulk Add →
                     </button>
@@ -587,11 +527,7 @@ const Dashboard = () => {
                     {aiItems.map((item, idx) => (
                       <div
                         key={idx}
-                        className="text-xs py-1 border-b"
-                        style={{
-                          borderColor: COLORS.panelBorder,
-                          color: COLORS.sub,
-                        }}
+                        className="text-xs py-1 border-b border-custom-border text-custom-sub"
                       >
                         {item.name} — {item.category} — {item.expiryDate} — Qty:{" "}
                         {item.quantity} — ${item.price}
@@ -601,25 +537,13 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-            <div
-              className="mt-4 p-4 rounded-xl"
-              style={{
-                background: COLORS.panel,
-                border: `1px solid ${COLORS.panelBorder}`,
-              }}
-            >
+            <div className="mt-4 p-4 rounded-xl bg-custom-panel border border-custom-border">
               <textarea
                 rows="10"
                 value={bulkItems}
                 onChange={(e) => setBulkItems(e.target.value)}
                 placeholder="Milk, Dairy, 2026-09-15, 10, 4.99&#10;Bread, Bakery, 2026-08-30, 5, 2.49"
-                className="w-full p-3 rounded-lg text-sm font-mono"
-                style={{
-                  background: COLORS.bg,
-                  color: COLORS.text,
-                  border: `1px solid ${COLORS.panelBorder}`,
-                  outline: "none",
-                }}
+                className="w-full p-3 rounded-lg text-sm font-mono bg-custom-bg text-custom-text border border-custom-border outline-none"
               />
               <button
                 onClick={handleBulkAdd}
@@ -628,7 +552,7 @@ const Dashboard = () => {
                 Add All Items
               </button>
               {bulkMessage && (
-                <p className="mt-3 text-sm" style={{ color: "#3ecf8e" }}>
+                <p className="mt-3 text-sm text-[#3ecf8e]">
                   {bulkMessage}
                 </p>
               )}

@@ -1,8 +1,3 @@
-const COLORS = {
-  text: "#e8eef7",
-  sub: "#7f97b8",
-};
-
 const Donut = ({ data, centerValue, centerLabel }) => {
   const size = 160;
   const stroke = 22;
@@ -22,7 +17,7 @@ const Donut = ({ data, centerValue, centerLabel }) => {
               cy={size / 2}
               r={r}
               fill="none"
-              stroke={seg.color}
+              stroke={seg.color} // Leave this because it's dynamic!
               strokeWidth={stroke}
               strokeDasharray={`${len} ${c - len}`}
               strokeDashoffset={-offset}
@@ -33,10 +28,25 @@ const Donut = ({ data, centerValue, centerLabel }) => {
           return circle;
         })}
       </g>
-      <text x="50%" y="47%" textAnchor="middle" fontSize="24" fontWeight="700" fill={COLORS.text}>
+      
+      {/* Replaced inline styles with Tailwind fill classes */}
+      <text 
+        x="50%" 
+        y="47%" 
+        textAnchor="middle" 
+        fontSize="24" 
+        fontWeight="700" 
+        className="fill-custom-text"
+      >
         {centerValue}
       </text>
-      <text x="50%" y="60%" textAnchor="middle" fontSize="10" fill={COLORS.sub}>
+      <text 
+        x="50%" 
+        y="60%" 
+        textAnchor="middle" 
+        fontSize="10" 
+        className="fill-custom-sub"
+      >
         {centerLabel}
       </text>
     </svg>

@@ -1,32 +1,106 @@
-const COLORS = {
-  text: "#e8eef7",
-  sub: "#7f97b8",
-};
-
 const TrendChart = ({ data, max }) => {
-  const pts = data.map((d, idx) => {
-    const x = (idx / (data.length - 1)) * 300 + 10;
-    const y = 110 - (d.count / max) * 90;
-    return `${x},${y}`;
-  });
-  const areaPts = `10,110 ${pts.join(" ")} 310,110`;
+  // Safety check: if no data, don't render anything
+  if (!data || data.length === 0) {
+    return <div className="text-custom-sub text-sm p-4">No data to display</div>;
+  }
+
+  // Using 100x40 viewBox so it scales perfectly to any parent width
+  const chartWidth = 100;
+  const chartHeight = 40;
+  const paddingX = 2;
+  const baseY = 36;
+
+  // Get the max value for scaling
+  const maxVal = max || Math.max(1, ...data.map((d) => d.count));
+
+  // Convert label strings to actual timestamps for exact spacing
+  const times = data.map((d) => new Date(d.label).getTime());
+  const minTime = Math.min(...times);
+  const maxTime = Math.max(...times);
+
+  // Helper: Plot X based on exact date timeline (scaled to 0-100)
+  const getX = (idx) => {
+    if (times.length === 1) return chartWidth / 2;
+    const t = times[idx];
+    const ratio = (t - minTime) / (maxTime - minTime || 1);
+    return ratio * (chartWidth - paddingX * 2) + paddingX;
+  };
+
+  const getY = (count) => {
+    return baseY - (count / maxVal) * (chartHeight - 10);
+  };
+
+  const pts = data.map((d, idx) => ({
+    x: getX(idx),
+    y: getY(d.count),
+    label: d.label,
+    count: d.count,
+  }));
+
+  // Generate a smooth curve using cubic bezier
+  const linePath = pts.reduce((acc, pt, idx, arr) => {
+    if (idx === 0) return `M ${pt.x} ${pt.y}`;
+    const prev = arr[idx - 1];
+    const midX = (prev.x + pt.x) / 2;
+    return `${acc} C ${midX} ${prev.y}, ${midX} ${pt.y}, ${pt.x} ${pt.y}`;
+  }, "");
+
+  // Area fill path (closes the curve at the bottom)
+  const areaPath = `${linePath} L ${pts[pts.length - 1].x} ${baseY} L ${pts[0].x} ${baseY} Z`;
 
   return (
-    <svg viewBox="0 0 320 120" className="w-full h-28 mt-2">
-      <polygon points={areaPts} fill="url(#areaFill)" opacity="0.3" />
-      <polyline points={pts.join(" ")} fill="none" stroke="#4a9fdb" strokeWidth="2.5" />
-      {data.map((d, idx) => {
-        const x = (idx / (data.length - 1)) * 300 + 10;
-        const y = 110 - (d.count / max) * 90;
-        return <circle key={idx} cx={x} cy={y} r="3" fill="#4a9fdb" />;
-      })}
-      <defs>
-        <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4a9fdb" />
-          <stop offset="100%" stopColor="#4a9fdb" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-    </svg>
+    <div className="w-full">
+      <svg 
+        viewBox="0 0 100 40" 
+        preserveAspectRatio="none" 
+        className="w-full h-32"
+      >
+        <defs>
+          <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" className="stop-color-[#4a9fdb]" />
+            <stop offset="100%" className="stop-color-[#4a9fdb] stop-opacity-0" />
+          </linearGradient>
+        </defs>
+        
+        {/* Background gridlines for better readability */}
+        {[0, 0.25, 0.5, 0.75, 1].map((fraction) => (
+          <line
+            key={fraction}
+            x1="0"
+            y1={baseY - fraction * (chartHeight - 10)}
+            x2="100"
+            y2={baseY - fraction * (chartHeight - 10)}
+            className="stroke-custom-border"
+            strokeWidth="0.5"
+            strokeDasharray="2 2"
+          />
+        ))}
+
+        <path d={areaPath} fill="url(#areaFill)" opacity="0.5" />
+        <path d={linePath} className="fill-none stroke-[#4a9fdb]" strokeWidth="1.5" strokeLinecap="round" />
+
+        {pts.map((pt, idx) => (
+          <circle 
+            key={idx} 
+            cx={pt.x} 
+            cy={pt.y} 
+            r="1.5" 
+            className="fill-[#4a9fdb]" 
+          />
+        ))}
+      </svg>
+      
+      {/* Date labels below the SVG (Scaled as normal HTML to avoid stretching) */}
+      <div className="flex justify-between text-[10px] mt-2 text-custom-sub">
+        {pts.map((pt, idx) => {
+          // Show first, last, and every 5th point to prevent overlapping
+          if (idx === 0 || idx === pts.length - 1 || idx % 5 === 0) {
+            return <span key={idx}>{pt.label}</span>;
+          }
+          return null;
+        })}
+      </div>
+    </div>
   );
 };
 

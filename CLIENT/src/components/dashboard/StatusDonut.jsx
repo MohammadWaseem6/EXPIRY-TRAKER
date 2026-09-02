@@ -1,10 +1,5 @@
 import Donut from "./Donut";
 
-const COLORS = {
-  text: "#e8eef7",
-  sub: "#7f97b8",
-};
-
 const StatusDonut = ({ data }) => {
   return (
     <div className="flex items-center gap-4">
@@ -12,9 +7,11 @@ const StatusDonut = ({ data }) => {
       <div className="flex flex-col gap-2">
         {data.map((s) => (
           <div key={s.name} className="flex items-center gap-2 text-xs">
+            {/* Leave this inline style because s.color is dynamic */}
             <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
-            <span style={{ color: COLORS.text }}>{s.name}</span>
-            <span style={{ color: COLORS.sub }}>{s.pct.toFixed(1)}%</span>
+            
+            <span className="text-custom-text">{s.name}</span>
+            <span className="text-custom-sub">{s.pct.toFixed(1)}%</span>
           </div>
         ))}
       </div>

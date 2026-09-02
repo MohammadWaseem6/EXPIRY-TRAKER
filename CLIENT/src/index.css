@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@theme {
+  --color-custom-bg: #0a1a2f;
+  --color-custom-panel: #0f2540;
+  --color-custom-border: #1c3a5e;
+  --color-custom-text: #e8eef7;
+  --color-custom-sub: #7f97b8;
+  --color-custom-grid: #1c3a5e;
+  --color-custom-active: #4a9fdb;
+}
