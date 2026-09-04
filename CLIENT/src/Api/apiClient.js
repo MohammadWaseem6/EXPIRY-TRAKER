@@ -38,13 +38,18 @@ export const apiClient = {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => res.json()),
 
-  updateItem: (token, itemId, itemData) =>
-    fetch(`${BASE_URL}/items/${itemId}`, {
+updateItem: (token, itemId, itemData) =>
+  fetch(`${BASE_URL}/items/${itemId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(itemData),
+  }).then((res) => res.json()),
+  releaseItem: (token, itemId) =>
+    fetch(`${BASE_URL}/items/${itemId}/release`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(itemData),
+      headers: { Authorization: `Bearer ${token}` },
     }).then((res) => res.json()),
 };

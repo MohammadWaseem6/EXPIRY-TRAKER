@@ -5,8 +5,8 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 const userRoutes = require("./routes/userRoutes");
-const stockRequestRoutes = require("./routes/stockingRequestRoutes");
-const orderRoutes = require("./routes/orderRoutes");
+
+
 const aiRoutes = require("./routes/aiRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 
@@ -31,8 +31,6 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/stock-requests", stockRequestRoutes);
-app.use("/api/orders", orderRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
 

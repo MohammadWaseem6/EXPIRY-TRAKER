@@ -49,6 +49,20 @@ const getItems = async (req, res) => {
   }
 };
 
+// GET RELEASED ITEMS (history)
+const getReleasedItems = async (req, res) => {
+  try {
+    const items = await Item.find({
+      user: req.user.id,
+      released: true,
+    }).sort({ releasedAt: -1 });
+    res.json(items);
+  } catch (error) {
+    console.error("Get released items error:", error);
+    res.status(500).json({ error: "Server error while fetching released items" });
+  }
+};
+
 // DELETE ITEM
 const deleteItem = async (req, res) => {
   try {
@@ -86,9 +100,8 @@ const updateItem = async (req, res) => {
       });
     }
 
-    // Update only the fields that are provided
     if (name) item.name = name;
-    if (category) item.category = category; // ✅ fixed spelling
+    if (category) item.category = category;
     if (expiryDate) item.expiryDate = expiryDate;
 
     await item.save();
@@ -103,4 +116,38 @@ const updateItem = async (req, res) => {
   }
 };
 
-module.exports = { createItem, getItems, deleteItem, updateItem }; // ✅ consistent naming
+//  RELEASE ITEM — Permanently delete from database (BACKEND ONLY)
+const releaseItem = async (req, res) => {
+  try {
+    // console.log(" Release endpoint hit for item:", req.params.id);
+    // console.log("User:", req.user.id);
+
+    const item = await Item.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user.id,
+    });
+
+    if (!item) {
+      // console.log("Item not found");
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    // console.log(" Item released:", item.name);
+    res.json({
+      message: "Item released and removed from inventory",
+      item,
+    });
+  } catch (error) {
+    console.error("Release item error:", error);
+    res.status(500).json({ error: "Server error while releasing item" });
+  }
+};
+
+module.exports = { 
+  createItem, 
+  getItems, 
+  getReleasedItems, 
+  deleteItem, 
+  updateItem, 
+  releaseItem 
+};

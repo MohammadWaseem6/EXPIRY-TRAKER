@@ -6,6 +6,7 @@ import {
   CalendarX,
   Search,
   Download,
+  CheckCircle,
 } from "lucide-react";
 import { exportItemsToCSV } from "../utils/exportCSV";
 import { useAuth } from "../context/AuthContext";
@@ -56,17 +57,20 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
   </Panel>
 );
 
-const ExpiredView = () => {
+const ExpiredView = ({ items: propItems, onRelease }) => {
   const { token } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("overdue");
+  const [message, setMessage] = useState("");
 
-  //  Fetch items when component mounts
   useEffect(() => {
-    if (token) {
+    if (propItems) {
+      setItems(propItems);
+      setLoading(false);
+    } else if (token) {
       apiClient
         .getItems(token)
         .then((data) => {
@@ -75,9 +79,8 @@ const ExpiredView = () => {
         .catch((err) => console.error("Fetch items error:", err))
         .finally(() => setLoading(false));
     }
-  }, [token]);
+  }, [token, propItems]);
 
-  // Filter expired items
   const expired = useMemo(() => {
     return items
       .filter((i) => daysUntil(i.expiryDate) < 0)
@@ -126,6 +129,25 @@ const ExpiredView = () => {
     return { count: expired.length, valueAtRisk, oldest, categoriesAffected };
   }, [expired]);
 
+  // ---------- RELEASE HANDLER ----------
+  const handleRelease = async (itemId) => {
+    if (window.confirm("Release this expired item? It will be permanently removed from inventory.")) {
+      try {
+        const response = await apiClient.releaseItem(token, itemId);
+        if (response.message) {
+          setItems((prevItems) => prevItems.filter((item) => item._id !== itemId));
+          setMessage("✅ Item released and removed from inventory!");
+          setTimeout(() => setMessage(""), 3000);
+          if (onRelease) onRelease(itemId);
+        } else {
+          setMessage(response.error || "Failed to release item");
+        }
+      } catch (error) {
+        setMessage("Something went wrong");
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -142,10 +164,9 @@ const ExpiredView = () => {
       className="flex flex-col gap-4"
       style={{ background: COLORS.bg, padding: "24px", minHeight: "100vh" }}
     >
-      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <h2 className="text-lg font-bold" style={{ color: COLORS.text }}>
-          Expired Items
+          ⚠️ Expired Items
         </h2>
         <button
           onClick={() => exportItemsToCSV(filtered, "expired-items")}
@@ -157,7 +178,12 @@ const ExpiredView = () => {
         </button>
       </div>
 
-      {/* Stats */}
+      {message && (
+        <div className="p-3 rounded-lg text-sm text-center" style={{ background: "rgba(62,207,142,0.15)", color: "#3ecf8e" }}>
+          {message}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           icon={AlertOctagon}
@@ -185,7 +211,6 @@ const ExpiredView = () => {
         />
       </div>
 
-      {/* Filters */}
       <Panel>
         <div className="flex flex-col md:flex-row gap-3 mb-4">
           <div className="relative flex-1">
@@ -239,84 +264,98 @@ const ExpiredView = () => {
           </select>
         </div>
 
-        {/* Table */}
-        <table className="w-full text-sm">
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${COLORS.panelBorder}` }}>
-              {[
-                "Item",
-                "Category",
-                "Qty",
-                "Price",
-                "Expired On",
-                "Overdue",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="text-left py-2 text-[10px] font-medium uppercase"
-                  style={{ color: COLORS.sub }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((item, idx) => (
-              <tr
-                key={idx}
-                style={{ borderBottom: `1px solid ${COLORS.grid}` }}
-              >
-                <td
-                  className="py-2.5 font-medium"
-                  style={{ color: COLORS.text }}
-                >
-                  {item.name || "Unnamed item"}
-                </td>
-                <td className="py-2.5" style={{ color: COLORS.sub }}>
-                  {item.category || "Uncategorized"}
-                </td>
-                <td className="py-2.5" style={{ color: COLORS.sub }}>
-                  {item.quantity ?? "-"}
-                </td>
-                <td className="py-2.5" style={{ color: COLORS.sub }}>
-                  ${(parseFloat(item.price) || 0).toFixed(2)}
-                </td>
-                <td className="py-2.5" style={{ color: COLORS.sub }}>
-                  {new Date(item.expiryDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </td>
-                <td className="py-2.5">
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{
-                      background: "rgba(194,62,143,0.15)",
-                      color: "#e05fae",
-                    }}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${COLORS.panelBorder}` }}>
+                {[
+                  "Item",
+                  "Category",
+                  "Qty",
+                  "Price",
+                  "Expired On",
+                  "Overdue",
+                  "Actions",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left py-2 text-[10px] font-medium uppercase"
+                    style={{ color: COLORS.sub }}
                   >
-                    {item.daysOverdue}d overdue
-                  </span>
-                </td>
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="py-8 text-center text-sm"
-                  style={{ color: COLORS.sub }}
+            </thead>
+            <tbody>
+              {filtered.map((item, idx) => (
+                <tr
+                  key={idx}
+                  style={{ borderBottom: `1px solid ${COLORS.grid}` }}
                 >
-                  {expired.length === 0
-                    ? "Nothing expired — stock is clean 🎉"
-                    : "No items match your filters"}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <td
+                    className="py-2.5 font-medium"
+                    style={{ color: COLORS.text }}
+                  >
+                    {item.name || "Unnamed item"}
+                  </td>
+                  <td className="py-2.5" style={{ color: COLORS.sub }}>
+                    {item.category || "Uncategorized"}
+                  </td>
+                  <td className="py-2.5" style={{ color: COLORS.sub }}>
+                    {item.quantity ?? "-"}
+                  </td>
+                  <td className="py-2.5" style={{ color: COLORS.sub }}>
+                    ${(parseFloat(item.price) || 0).toFixed(2)}
+                  </td>
+                  <td className="py-2.5" style={{ color: COLORS.sub }}>
+                    {new Date(item.expiryDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="py-2.5">
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: "rgba(194,62,143,0.15)",
+                        color: "#e05fae",
+                      }}
+                    >
+                      {item.daysOverdue}d overdue
+                    </span>
+                  </td>
+                  <td className="py-2.5">
+                    <button
+                      onClick={() => handleRelease(item._id)}
+                      className="text-xs px-2 py-1 rounded-lg transition flex items-center gap-1"
+                      style={{
+                        background: "rgba(62,207,142,0.15)",
+                        color: "#3ecf8e",
+                      }}
+                    >
+                      <CheckCircle className="w-3 h-3" /> Release
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-8 text-center text-sm"
+                    style={{ color: COLORS.sub }}
+                  >
+                    {expired.length === 0
+                      ? "Nothing expired — stock is clean 🎉"
+                      : "No items match your filters"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Panel>
     </div>
   );

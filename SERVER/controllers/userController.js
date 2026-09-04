@@ -1,6 +1,5 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
-const { sendInvitationEmail } = require("../utils/emailServices"); 
 
 // Get all users (Admin only)
 const getUsers = async (req, res) => {
@@ -29,7 +28,9 @@ const updateUser = async (req, res) => {
 
     await user.save();
 
-    const updatedUser = await User.findById(req.params.id).select("-password_hash");
+    const updatedUser = await User.findById(req.params.id).select(
+      "-password_hash",
+    );
     res.json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
     console.error("Update user error:", error);
@@ -58,7 +59,7 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// Invite new user (Admin only – sends email with temporary password)
+// Invite new user (Admin only – NO EMAIL)
 const inviteUser = async (req, res) => {
   try {
     const { name, email, role, branch } = req.body;
@@ -85,33 +86,12 @@ const inviteUser = async (req, res) => {
       isActive: true,
     });
 
-    // Send invitation email
-    const emailResult = await sendInvitationEmail(
-      email,
-      name,
-      user.role,
-      tempPassword,
-      user.branch
-    );
-
-    if (!emailResult.success) {
-      console.warn("⚠️ Email failed but user was created:", emailResult.error);
-      return res.status(201).json({
-        message: "User created, but email could not be sent. Check email settings.",
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          branch: user.branch,
-        },
-      });
-    }
-
+    //  No email sent — just return the user with temp password
     const newUser = await User.findById(user._id).select("-password_hash");
     res.status(201).json({
-      message: `✅ Invitation sent to ${email}`,
+      message: "User invited successfully",
       user: newUser,
+      tempPassword, // Return temp password so admin can share it manually
     });
   } catch (error) {
     console.error("Invite user error:", error);

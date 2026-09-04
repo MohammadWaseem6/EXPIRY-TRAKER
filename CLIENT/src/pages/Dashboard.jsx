@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../api/apiClient";
@@ -14,11 +12,12 @@ import {
   X,
   BarChart3,
   Copy,
+  CheckCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import AIChatbot from "./AIChatbot";
 
-// Import all dashboard components
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import StatsCards from "../components/dashboard/StatsCards";
 import Panel from "../components/dashboard/Panel";
@@ -30,9 +29,7 @@ import Leaderboard from "../components/dashboard/Leaderboard";
 import StockHealth from "../components/dashboard/StockHealth";
 import ValueCard from "../components/dashboard/ValueCard";
 import ExpiredView from "./ExpiredView";
-
-// Import your actual Settings component
-import SettingsView from "./SettingsView"; // MAKE SURE THIS PATH IS CORRECT
+import SettingsView from "./SettingsView";
 
 const daysUntil = (dateStr) =>
   Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
@@ -49,7 +46,6 @@ const Dashboard = () => {
   const [aiItems, setAiItems] = useState([]);
   const [aiError, setAiError] = useState("");
 
-  // ---------- fetch items ----------
   useEffect(() => {
     if (token) {
       apiClient
@@ -62,7 +58,6 @@ const Dashboard = () => {
     }
   }, [token]);
 
-  // ---------- stats ----------
   const stats = useMemo(() => {
     const totalItems = items.length;
     const expiringSoon = items.filter((i) => {
@@ -93,15 +88,14 @@ const Dashboard = () => {
     };
   }, [items]);
 
-  // ---------- trend (Exact Date Based: 14 days back, today, 14 days forward) ----------
   const trend = useMemo(() => {
     const today = new Date();
     const days = [];
-    
+
     for (let i = -14; i <= 14; i++) {
       const target = new Date(today);
       target.setDate(today.getDate() + i);
-      
+
       const label = target.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -114,12 +108,11 @@ const Dashboard = () => {
 
       days.push({ label, count });
     }
-    
+
     const max = Math.max(1, ...days.map((d) => d.count));
     return { days, max };
   }, [items]);
 
-  // ---------- heatmap ----------
   const buckets = ["Expired", "0-3d", "4-7d", "8-14d", "15d+"];
   const heatmap = useMemo(() => {
     const cats = stats.categories.slice(0, 6);
@@ -143,7 +136,6 @@ const Dashboard = () => {
     return { grid, max };
   }, [items, stats.categories]);
 
-  // ---------- status donut ----------
   const statusDonut = useMemo(() => {
     const total = stats.totalItems || 1;
     return [
@@ -174,7 +166,6 @@ const Dashboard = () => {
     ];
   }, [stats]);
 
-  // ---------- category donut ----------
   const categoryDonut = useMemo(() => {
     const counts = {};
     items.forEach((i) => {
@@ -201,7 +192,6 @@ const Dashboard = () => {
       }));
   }, [items]);
 
-  // ---------- leaderboard ----------
   const leaderboard = useMemo(() => {
     return [...items]
       .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate))
@@ -214,21 +204,46 @@ const Dashboard = () => {
       }));
   }, [items]);
 
-  // ---------- expired items ----------
   const expiredItems = useMemo(() => {
     return items
       .filter((i) => daysUntil(i.expiryDate) < 0)
       .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
   }, [items]);
 
-  // ---------- bulk add handler ----------
+  const handleRelease = async (itemId) => {
+    if (!itemId) return;
+
+    if (
+      window.confirm(
+        "Release this item? It will be permanently removed from inventory.",
+      )
+    ) {
+      try {
+        const response = await apiClient.releaseItem(token, itemId);
+        if (response.message) {
+          setItems((prevItems) =>
+            prevItems.filter((item) => item._id !== itemId),
+          );
+          setBulkMessage("Item released and removed from inventory!");
+          setTimeout(() => setBulkMessage(""), 3000);
+        } else {
+          setBulkMessage(response.error || "Failed to release item");
+        }
+      } catch (error) {
+        setBulkMessage("Something went wrong");
+      }
+    }
+  };
+
   const handleBulkAdd = async () => {
     if (!bulkItems.trim()) {
       setBulkMessage(
         "Please paste items in the format: Name, Category, ExpiryDate, Quantity, Price",
       );
+      setTimeout(() => setBulkMessage(""), 3000);
       return;
     }
+
     const lines = bulkItems.split("\n").filter((line) => line.trim());
     const parsedItems = lines.map((line) => {
       const parts = line.split(",").map((p) => p.trim());
@@ -240,55 +255,77 @@ const Dashboard = () => {
         price: parseFloat(parts[4]) || 0,
       };
     });
+
+    const existingItems = await apiClient.getItems(token);
+    const existingMap = {};
+    existingItems.forEach((item) => {
+      const key = `${item.name}|${item.category}|${item.expiryDate}|${item.price}`;
+      existingMap[key] = item;
+    });
+
     let success = 0;
-    for (const item of parsedItems) {
+    let merged = 0;
+    let failed = 0;
+    const itemsToUpdate = [];
+    const itemsToCreate = [];
+
+    for (const newItem of parsedItems) {
+      const key = `${newItem.name}|${newItem.category}|${newItem.expiryDate}|${newItem.price}`;
+      if (existingMap[key]) {
+        const existingItem = existingMap[key];
+        const newQuantity =
+          (existingItem.quantity || 0) + (newItem.quantity || 0);
+        itemsToUpdate.push({
+          id: existingItem._id,
+          quantity: newQuantity,
+        });
+        merged++;
+      } else {
+        itemsToCreate.push(newItem);
+      }
+    }
+
+    for (const update of itemsToUpdate) {
+      try {
+        await apiClient.updateItem(token, update.id, {
+          quantity: update.quantity,
+        });
+        success++;
+      } catch (err) {
+        failed++;
+        console.error("Failed to update item:", err);
+      }
+    }
+
+    for (const item of itemsToCreate) {
       try {
         await apiClient.createItem(token, item);
         success++;
       } catch (err) {
-        console.error("Failed to add item:", item, err);
+        failed++;
+        console.error("Failed to create item:", err);
       }
     }
-    setBulkMessage(` ${success} items added successfully!`);
+
+    const updatedItems = await apiClient.getItems(token);
+    if (Array.isArray(updatedItems)) {
+      setItems(updatedItems);
+    }
+
+    let msg = "";
+    if (success > 0 && failed === 0) {
+      msg = `✅ ${success} items added/merged successfully! (${merged} merged)`;
+    } else if (success > 0 && failed > 0) {
+      msg = `⚠️ ${success} items added, ${failed} failed. (${merged} merged)`;
+    } else {
+      msg = `❌ Failed to add items. Please check the format.`;
+    }
+
+    setBulkMessage(msg);
     setBulkItems("");
-    const updated = await apiClient.getItems(token);
-    if (Array.isArray(updated)) setItems(updated);
-    setTimeout(() => setBulkMessage(""), 4000);
+    setTimeout(() => setBulkMessage(""), 5000);
   };
 
-  // ---------- AI upload handler ----------
-  const handleAIUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setAiLoading(true);
-    setAiError("");
-    setAiItems([]);
-    const formData = new FormData();
-    formData.append("image", file);
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:5001/api/ai/extract-items`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        },
-      );
-      const data = await response.json();
-      if (data.success) {
-        setAiItems(data.items);
-      } else {
-        setAiError(data.error || "Failed to extract items");
-      }
-    } catch (error) {
-      setAiError("Upload failed. Please try again.");
-    } finally {
-      setAiLoading(false);
-      e.target.value = "";
-    }
-  };
-
-  // ---------- sidebar ----------
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "stock", label: "Stock", icon: Package },
@@ -299,103 +336,145 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 bg-custom-bg">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400" />
+      <div className="flex flex-col items-center justify-center gap-3 h-screen bg-[#0a1a2f]">
+        <div className="relative w-10 h-10">
+          <div className="absolute inset-0 rounded-full border-2 border-[#1c3a5e]" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#4a9fdb] animate-spin" />
+        </div>
+        <span className="text-xs tracking-wide text-[#5b7699]">
+          Loading inventory…
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-custom-bg">
-      {/* ===== SIDEBAR ===== */}
+    <div className="flex min-h-screen bg-[#0a1a2f] text-[#e8eef7]">
+      {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} flex flex-col transition-all duration-300 flex-shrink-0 border-r bg-custom-panel border-custom-border`}
+        className={`${
+          sidebarOpen ? "w-70" : "w-[90px]"
+        } flex flex-col flex-shrink-0 transition-[width] duration-300 bg-[#0c2038]/95 border-r border-[#16304f] overflow-hidden`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-custom-border">
-          <div className="flex items-center gap-2">
-            <Package className="w-6 h-6 text-blue-400" />
+        <div className="flex items-center h-16 px-4 border-b border-[#16304f] flex-shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#4a9fdb] to-[#2f6fa8] shrink-0">
+              <Package className="w-4.5 h-4.5 text-white" strokeWidth={2.25} />
+            </div>
             {sidebarOpen && (
-              <span className="text-lg font-bold text-custom-text">
+              <span className="text-[15px] font-semibold tracking-tight truncate whitespace-nowrap">
                 Store
               </span>
             )}
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 rounded-lg hover:bg-white/10"
+            className="p-1.5 rounded-md text-[#5b7699] hover:text-[#c9d8ec] hover:bg-white/5 transition-colors flex-shrink-0"
+            aria-label="Toggle sidebar"
           >
-            {sidebarOpen ? (
-              <X className="w-5 h-5 text-custom-sub" />
-            ) : (
-              <Menu className="w-5 h-5 text-custom-sub" />
-            )}
+            {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full ${
-                activeTab === item.id
-                  ? "bg-blue-600/20 text-blue-400"
-                  : "hover:bg-white/5 text-custom-sub"
-              } ${!sidebarOpen && "justify-center"}`}
+        <nav className="flex-1 px-2.5 py-4 space-y-0.5 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`group relative flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? "bg-[#4a9fdb]/10 text-[#7fc4ea]"
+                    : "text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04]"
+                } ${!sidebarOpen && "justify-center"}`}
+              >
+                {isActive && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[#4a9fdb]" />
+                )}
+                <item.icon
+                  className="w-[18px] h-[18px] flex-shrink-0"
+                  strokeWidth={isActive ? 2.25 : 1.9}
+                />
+                {sidebarOpen && <span className="truncate">{item.label}</span>}
+              </button>
+            );
+          })}
+
+          <div className="pt-3 mt-3 border-t border-[#16304f]/80 space-y-0.5">
+            <RouterLink
+              to="/stock"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
+                !sidebarOpen && "justify-center"
+              }`}
             >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span>{item.label}</span>}
-            </button>
-          ))}
-          <RouterLink
-            to="/reports"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 text-custom-sub ${
-              !sidebarOpen && "justify-center"
-            }`}
-          >
-            <FileSpreadsheet className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span>Reports</span>}
-          </RouterLink>
-          <RouterLink
-            to="/charts"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 text-custom-sub ${
-              !sidebarOpen && "justify-center"
-            }`}
-          >
-            <BarChart3 className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span>Charts</span>}
-          </RouterLink>
+              <Package
+                className="w-[18px] h-[18px] flex-shrink-0"
+                strokeWidth={1.9}
+              />
+              {sidebarOpen && <span>Stock</span>}
+            </RouterLink>
+            <RouterLink
+              to="/reports"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
+                !sidebarOpen && "justify-center"
+              }`}
+            >
+              <FileSpreadsheet
+                className="w-[18px] h-[18px] flex-shrink-0"
+                strokeWidth={1.9}
+              />
+              {sidebarOpen && <span>Reports</span>}
+            </RouterLink>
+            <RouterLink
+              to="/charts"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
+                !sidebarOpen && "justify-center"
+              }`}
+            >
+              <BarChart3
+                className="w-[18px] h-[18px] flex-shrink-0"
+                strokeWidth={1.9}
+              />
+              {sidebarOpen && <span>Charts</span>}
+            </RouterLink>
+          </div>
         </nav>
 
-        <div className="p-4 border-t border-custom-border">
+        <div className="p-2.5 border-t border-[#16304f]">
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm w-full hover:bg-white/5 text-custom-sub"
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#e0708f] hover:bg-[#c23e8f]/10 transition-colors ${
+              !sidebarOpen && "justify-center"
+            }`}
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <LogOut
+              className="w-[18px] h-[18px] flex-shrink-0"
+              strokeWidth={1.9}
+            />
             {sidebarOpen && <span>Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* ===== MAIN CONTENT ===== */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-custom-bg">
+      {/* Main */}
+      <main className="flex-1 overflow-y-auto p-5 md:p-8 bg-[radial-gradient(ellipse_at_top,rgba(74,159,219,0.06),transparent_55%)]">
         {activeTab === "dashboard" && (
-          <>
+          <div className="space-y-5 max-w-[1400px]">
             <DashboardHeader
               title="Store Dashboard"
               subtitle="Live stock overview"
             />
             <StatsCards stats={stats} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <Panel>
                 <Eyebrow right="29-day timeline">EXPIRY TIMELINE</Eyebrow>
-                <div className="flex items-end gap-2 mb-2">
-                  <span className="text-4xl font-bold text-custom-text">
+                <div className="flex items-end gap-2.5 mb-3">
+                  <span className="text-4xl font-bold tracking-tight text-[#e8eef7]">
                     {trend.days.reduce((s, d) => s + d.count, 0)}
                   </span>
-                  <span className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-[rgba(194,62,143,0.15)] text-[#e05fae]">
+                  <span className="mb-1 text-xs px-2 py-1 rounded-md bg-[#c23e8f]/12 text-[#e05fae] font-medium">
                     {stats.expiringSoon} due in 3 days
                   </span>
                 </div>
@@ -408,7 +487,7 @@ const Dashboard = () => {
               </Panel>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <ValueCard
                 title="TOTAL VALUE"
                 value={`$${stats.totalValue.toFixed(0)}`}
@@ -431,139 +510,167 @@ const Dashboard = () => {
             <Panel>
               <StockHealth percentage={stats.stockHealth} />
             </Panel>
-          </>
-        )}
-
-        {activeTab === "stock" && (
-          <div>
-            <h1 className="text-2xl font-bold text-custom-text">
-              📦 Stock Overview
-            </h1>
-            <p className="text-sm mt-2 text-custom-sub">
-              All inventory items with quantity and status
-            </p>
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {items.map((item) => (
-                <div
-                  key={item._id}
-                  className="rounded-xl p-4 bg-custom-panel border border-custom-border"
-                >
-                  <h3 className="font-semibold text-custom-text">
-                    {item.name}
-                  </h3>
-                  <p className="text-sm text-custom-sub">
-                    {item.category}
-                  </p>
-                  <div className="flex justify-between mt-2">
-                    <span className="text-sm text-custom-sub">
-                      Qty: {item.quantity || 0}
-                    </span>
-                    <span className="text-sm text-custom-sub">
-                      ${item.price || 0}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
-        {activeTab === "expired" && <ExpiredView items={items} />}
+        {activeTab === "stock" && (
+          <div className="max-w-[1400px]">
+            <div className="flex justify-between items-end mb-5">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-[#e8eef7]">
+                  Stock Overview
+                </h1>
+                <p className="text-sm mt-1 text-[#7f97b8]">
+                  {items.length} items in inventory
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  apiClient.getItems(token).then((data) => {
+                    if (Array.isArray(data)) setItems(data);
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg bg-[#3ecf8e]/12 text-[#3ecf8e] hover:bg-[#3ecf8e]/18 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Refresh
+              </button>
+            </div>
+
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-1"
+              style={{ maxHeight: "620px", overflowY: "auto" }}
+            >
+              {items.map((item) => {
+                const days = daysUntil(item.expiryDate);
+                let accent = "#3ecf8e";
+                let statusText = "Fresh";
+                let chipClasses = "bg-[#3ecf8e]/12 text-[#3ecf8e]";
+                if (days < 0) {
+                  accent = "#c23e8f";
+                  statusText = "Expired";
+                  chipClasses = "bg-[#c23e8f]/12 text-[#e05fae]";
+                } else if (days <= 3) {
+                  accent = "#f0a63a";
+                  statusText = "Soon";
+                  chipClasses = "bg-[#f0a63a]/12 text-[#f0a63a]";
+                }
+
+                return (
+                  <div
+                    key={item._id}
+                    className="rounded-xl p-4 bg-[#0f2540] border border-[#1c3a5e] hover:border-[#2c5581] transition-colors duration-150"
+                    style={{ borderLeft: `3px solid ${accent}` }}
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3
+                          className="font-semibold text-[#e8eef7] truncate"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </h3>
+                        <p className="text-xs mt-0.5 text-[#7f97b8]">
+                          {item.category || "Uncategorized"}
+                        </p>
+                      </div>
+                      <span
+                        className={`flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md ${chipClasses}`}
+                      >
+                        {statusText}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#1c3a5e]/60 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] text-[#5b7699]">Qty</span>
+                        <span className="text-[#e8eef7] font-medium">
+                          {item.quantity || 0}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] text-[#5b7699]">
+                          Price
+                        </span>
+                        <span className="text-[#e8eef7] font-medium">
+                          ${item.price || 0}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[11px] text-[#5b7699]">
+                          {days < 0 ? "Overdue" : "Left"}
+                        </span>
+                        <span className="font-medium" style={{ color: accent }}>
+                          {days < 0 ? `${Math.abs(days)}d` : `${days}d`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        onClick={() => handleRelease(item._id)}
+                        className="text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-[#3ecf8e]/12 text-[#3ecf8e] border border-[#3ecf8e]/25 hover:bg-[#3ecf8e]/20 transition-colors"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" /> Release
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {items.length === 0 && (
+              <div className="rounded-xl p-14 text-center bg-[#0f2540] border border-dashed border-[#1c3a5e]">
+                <Package
+                  className="w-10 h-10 mx-auto text-[#3a5578]"
+                  strokeWidth={1.5}
+                />
+                <p className="mt-3 text-sm text-[#7f97b8]">
+                  No items in inventory
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "expired" && (
+          <ExpiredView items={items} onRelease={handleRelease} />
+        )}
 
         {activeTab === "bulk" && (
-          <div>
-            <h1 className="text-2xl font-bold text-custom-text">
-              📋 Bulk Add Items
+          <div className="max-w-[900px]">
+            <h1 className="text-2xl font-bold tracking-tight text-[#e8eef7]">
+              Bulk Add Items
             </h1>
-            <p className="text-sm mt-2 text-custom-sub">
-              Paste items manually or upload a delivery note image to
-              auto-extract items.
+            <p className="text-sm mt-1.5 text-[#7f97b8]">
+              Paste items manually in the format: Name, Category, ExpiryDate,
+              Quantity, Price
             </p>
-            <div className="mt-4 p-4 rounded-xl bg-custom-panel border border-custom-border">
-              <div className="flex items-center gap-4 flex-wrap">
-                <label className="cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition bg-custom-active text-white">
-                  📤 Upload Delivery Note
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAIUpload}
-                  />
-                </label>
-                {aiLoading && (
-                  <span className="text-sm text-custom-sub">
-                    ⏳ Extracting items...
-                  </span>
-                )}
-                {aiError && (
-                  <span className="text-sm text-[#c23e8f]">
-                    {aiError}
-                  </span>
-                )}
-              </div>
-              {aiItems.length > 0 && (
-                <div className="mt-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-custom-text">
-                      ✅ {aiItems.length} items extracted
-                    </span>
-                    <button
-                      onClick={() => {
-                        const csv = aiItems
-                          .map(
-                            (i) =>
-                              `${i.name}, ${i.category}, ${i.expiryDate}, ${i.quantity}, ${i.price}`,
-                          )
-                          .join("\n");
-                        setBulkItems(csv);
-                        setAiItems([]);
-                      }}
-                      className="px-3 py-1 text-xs rounded-lg transition bg-custom-active text-white"
-                    >
-                      Copy to Bulk Add →
-                    </button>
-                  </div>
-                  <div className="mt-2 max-h-40 overflow-y-auto">
-                    {aiItems.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="text-xs py-1 border-b border-custom-border text-custom-sub"
-                      >
-                        {item.name} — {item.category} — {item.expiryDate} — Qty:{" "}
-                        {item.quantity} — ${item.price}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 p-4 rounded-xl bg-custom-panel border border-custom-border">
+
+            <div className="mt-5 p-5 rounded-xl bg-[#0f2540] border border-[#1c3a5e]">
               <textarea
                 rows="10"
                 value={bulkItems}
                 onChange={(e) => setBulkItems(e.target.value)}
-                placeholder="Milk, Dairy, 2026-09-15, 10, 4.99&#10;Bread, Bakery, 2026-08-30, 5, 2.49"
-                className="w-full p-3 rounded-lg text-sm font-mono bg-custom-bg text-custom-text border border-custom-border outline-none"
+                placeholder="Milk, Dairy, 2026-09-15, 10, 4.99\nBread, Bakery, 2026-08-30, 5, 2.49"
+                className="w-full p-3.5 rounded-lg text-sm font-mono leading-relaxed bg-[#0a1a2f] text-[#e8eef7] border border-[#1c3a5e] outline-none focus:border-[#4a9fdb] transition-colors resize-y"
               />
-              <button
-                onClick={handleBulkAdd}
-                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                Add All Items
-              </button>
-              {bulkMessage && (
-                <p className="mt-3 text-sm text-[#3ecf8e]">
-                  {bulkMessage}
-                </p>
-              )}
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  onClick={handleBulkAdd}
+                  className="px-6 py-2.5 text-sm font-medium bg-[#4a9fdb] text-white rounded-lg hover:bg-[#3d8ec8] transition-colors"
+                >
+                  Add All Items
+                </button>
+                {bulkMessage && (
+                  <p className="text-sm text-[#3ecf8e]">{bulkMessage}</p>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* === SETTINGS TAB FIXED === */}
-        {activeTab === "settings" && (
-          <SettingsView />
-        )}
+        {activeTab === "settings" && <SettingsView />}
       </main>
 
       <AIChatbot

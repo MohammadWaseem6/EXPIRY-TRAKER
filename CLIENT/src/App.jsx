@@ -7,6 +7,7 @@ import Reports from "./pages/Reports";
 import Charts from "./pages/Charts";
 import SettingsView from "./pages/SettingsView";
 import ExpiredView from "./pages/ExpiredView";
+import Stock from "./pages/Stock";   // ✅ ADD THIS
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -66,10 +67,10 @@ function App() {
             }
           />
           <Route
-            path="/settings"
+            path="/stock"    
             element={
               <ProtectedRoute>
-                <SettingsView />
+                <Stock />
               </ProtectedRoute>
             }
           />

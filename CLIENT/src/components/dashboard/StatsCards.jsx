@@ -49,8 +49,7 @@ const StatsCards = ({ stats }) => {
                 {card.value}
               </p>
               <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-green-500" />
-                <span className="text-xs text-green-500">+12% this month</span>
+                <span className="text-xs text-[#5b7699]">Current stock</span>
               </div>
             </div>
 
