@@ -1,5 +1,4 @@
-
-const BASE_URL = import.meta.env.VITE_API_URL || "https://expiry-traker.onrender.com/api";
+const BASE_URL = "https://expiry-traker.onrender.com/api";
 
 export const apiClient = {
   // Auth
