@@ -16,16 +16,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 
+//  SIMPLER CORS for development
 app.use(
   cors({
-    origin: [
-      "https://your-frontend.vercel.app",  // Your Vercel URL
-      "http://localhost:5173",              // Local development
-      "http://localhost:5001"
-    ],
+    origin: "http://localhost:5173",  // Your Vite frontend
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
 
