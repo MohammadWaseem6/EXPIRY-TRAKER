@@ -7,7 +7,7 @@ import Reports from "./pages/Reports";
 import Charts from "./pages/Charts";
 import SettingsView from "./pages/SettingsView";
 import ExpiredView from "./pages/ExpiredView";
-import Stock from "./pages/Stock";   // ✅ ADD THIS
+import Stock from "./pages/Stock";   
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
