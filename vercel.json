@@ -8,13 +8,10 @@
   "installCommand": "cd CLIENT && npm install --include=dev",
   "buildCommand": "cd CLIENT && npm run build",
   "outputDirectory": "CLIENT/dist",
-  "routes": [
+  "rewrites": [
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
