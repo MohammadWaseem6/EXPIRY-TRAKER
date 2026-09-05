@@ -166,7 +166,7 @@ const ExpiredView = ({ items: propItems, onRelease }) => {
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <h2 className="text-lg font-bold" style={{ color: COLORS.text }}>
-          ⚠️ Expired Items
+           Expired Items
         </h2>
         <button
           onClick={() => exportItemsToCSV(filtered, "expired-items")}

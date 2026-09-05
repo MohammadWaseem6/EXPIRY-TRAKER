@@ -114,6 +114,7 @@ const Dashboard = () => {
   }, [items]);
 
   const buckets = ["Expired", "0-3d", "4-7d", "8-14d", "15d+"];
+  // eslint-disable-next-line no-unused-vars
   const heatmap = useMemo(() => {
     const cats = stats.categories.slice(0, 6);
     const bucketOf = (d) => {
@@ -256,46 +257,21 @@ const Dashboard = () => {
       };
     });
 
-    const existingItems = await apiClient.getItems(token);
-    const existingMap = {};
-    existingItems.forEach((item) => {
-      const key = `${item.name}|${item.category}|${item.expiryDate}|${item.price}`;
-      existingMap[key] = item;
-    });
-
-    let success = 0;
-    let merged = 0;
-    let failed = 0;
-    const itemsToUpdate = [];
-    const itemsToCreate = [];
-
+    // Dedupe only WITHIN this paste batch — combine quantities for exact duplicates.
+    // No lookup against existing DB items, so nothing merges into old records.
+    const batchMap = new Map();
     for (const newItem of parsedItems) {
       const key = `${newItem.name}|${newItem.category}|${newItem.expiryDate}|${newItem.price}`;
-      if (existingMap[key]) {
-        const existingItem = existingMap[key];
-        const newQuantity =
-          (existingItem.quantity || 0) + (newItem.quantity || 0);
-        itemsToUpdate.push({
-          id: existingItem._id,
-          quantity: newQuantity,
-        });
-        merged++;
+      if (batchMap.has(key)) {
+        batchMap.get(key).quantity += newItem.quantity;
       } else {
-        itemsToCreate.push(newItem);
+        batchMap.set(key, { ...newItem });
       }
     }
+    const itemsToCreate = Array.from(batchMap.values());
 
-    for (const update of itemsToUpdate) {
-      try {
-        await apiClient.updateItem(token, update.id, {
-          quantity: update.quantity,
-        });
-        success++;
-      } catch (err) {
-        failed++;
-        console.error("Failed to update item:", err);
-      }
-    }
+    let success = 0;
+    let failed = 0;
 
     for (const item of itemsToCreate) {
       try {
@@ -312,13 +288,18 @@ const Dashboard = () => {
       setItems(updatedItems);
     }
 
+    const duplicatesInBatch = parsedItems.length - itemsToCreate.length;
     let msg = "";
     if (success > 0 && failed === 0) {
-      msg = `✅ ${success} items added/merged successfully! (${merged} merged)`;
+      msg = ` ${success} items created successfully!${
+        duplicatesInBatch > 0
+          ? ` (${duplicatesInBatch} duplicate rows merged within this batch)`
+          : ""
+      }`;
     } else if (success > 0 && failed > 0) {
-      msg = `⚠️ ${success} items added, ${failed} failed. (${merged} merged)`;
+      msg = ` ${success} items created, ${failed} failed.`;
     } else {
-      msg = `❌ Failed to add items. Please check the format.`;
+      msg = ` Failed to add items. Please check the format.`;
     }
 
     setBulkMessage(msg);
@@ -372,7 +353,11 @@ const Dashboard = () => {
             className="p-1.5 rounded-md text-[#5b7699] hover:text-[#c9d8ec] hover:bg-white/5 transition-colors flex-shrink-0"
             aria-label="Toggle sidebar"
           >
-            {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {sidebarOpen ? (
+              <X className="w-4 h-4" />
+            ) : (
+              <Menu className="w-4 h-4" />
+            )}
           </button>
         </div>
 
@@ -385,7 +370,7 @@ const Dashboard = () => {
                 onClick={() => setActiveTab(item.id)}
                 className={`group relative flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? "bg-[#4a9fdb]/10 text-[#7fc4ea]"
+                    ? "bg-[#4a9fdb]/10 text-[#4892ba]"
                     : "text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04]"
                 } ${!sidebarOpen && "justify-center"}`}
               >
