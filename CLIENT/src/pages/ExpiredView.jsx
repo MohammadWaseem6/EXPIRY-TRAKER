@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { exportItemsToCSV } from "../utils/exportCSV";
 import { useAuth } from "../context/AuthContext";
-import { apiClient } from "../api/apiClient";
+import { apiClient } from "../Api/apiClient";
 
 // ===== COLORS =====
 const COLORS = {
