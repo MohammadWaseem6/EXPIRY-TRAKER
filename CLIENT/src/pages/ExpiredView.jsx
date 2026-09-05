@@ -25,12 +25,17 @@ const Panel = ({ children, className = "" }) => (
 
 const StatCard = ({ icon: Icon, label, value, color }) => (
   <Panel className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-    <div className="p-2 rounded-lg flex-shrink-0" style={{ background: `${color}22` }}>
+    <div
+      className="p-2 rounded-lg flex-shrink-0"
+      style={{ background: `${color}22` }}
+    >
       <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color }} />
     </div>
     <div className="min-w-0 flex-1">
       <p className="text-[10px] sm:text-xs text-gray-400 truncate">{label}</p>
-      <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-100 truncate">{value}</p>
+      <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-100 truncate">
+        {value}
+      </p>
     </div>
   </Panel>
 );
@@ -109,11 +114,17 @@ const ExpiredView = ({ items: propItems, onRelease }) => {
 
   // ---------- RELEASE HANDLER ----------
   const handleRelease = async (itemId) => {
-    if (window.confirm("Release this expired item? It will be permanently removed from inventory.")) {
+    if (
+      window.confirm(
+        "Release this expired item? It will be permanently removed from inventory.",
+      )
+    ) {
       try {
         const response = await apiClient.releaseItem(token, itemId);
         if (response.message) {
-          setItems((prevItems) => prevItems.filter((item) => item._id !== itemId));
+          setItems((prevItems) =>
+            prevItems.filter((item) => item._id !== itemId),
+          );
           setMessage("Item released and removed from inventory!");
           setTimeout(() => setMessage(""), 3000);
           if (onRelease) onRelease(itemId);
