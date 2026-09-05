@@ -1,17 +1,3 @@
 {
-  "builds": [
-    {
-      "src": "CLIENT/package.json",
-      "use": "@vercel/static-build"
-    }
-  ],
-  "installCommand": "cd CLIENT && npm install --include=dev",
-  "buildCommand": "cd CLIENT && npm run build",
-  "outputDirectory": "CLIENT/dist",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }

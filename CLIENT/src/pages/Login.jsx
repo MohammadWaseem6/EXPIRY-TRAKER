@@ -45,7 +45,7 @@ const Login = () => {
           Welcome Back
         </h2>
         <p className="text-xs sm:text-sm text-center mt-1 text-gray-400">
-          Sign in to manage your inventory
+          Login in to manage your inventory
         </p>
 
         {/* Error Message */}
@@ -94,7 +94,11 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
@@ -109,7 +113,7 @@ const Login = () => {
               <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                Sign In <ArrowRight className="w-4 h-4" />
+                Log In <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
@@ -117,7 +121,10 @@ const Login = () => {
 
         <p className="text-center text-xs sm:text-sm mt-6 text-gray-400">
           Don't have an account?{" "}
-          <Link to="/register" className="font-medium hover:underline text-[#4a9fdb] hover:text-[#3d8ec8] transition">
+          <Link
+            to="/register"
+            className="font-medium hover:underline text-[#4a9fdb] hover:text-[#3d8ec8] transition"
+          >
             Create one
           </Link>
         </p>
