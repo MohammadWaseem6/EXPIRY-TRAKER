@@ -1,4 +1,5 @@
-const BASE_URL = "http://127.0.0.1:5001/api";
+
+const BASE_URL = import.meta.env.VITE_API_URL || "https://expiry-traker.onrender.com/api";
 
 export const apiClient = {
   // Auth
@@ -38,15 +39,16 @@ export const apiClient = {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => res.json()),
 
-updateItem: (token, itemId, itemData) =>
-  fetch(`${BASE_URL}/items/${itemId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(itemData),
-  }).then((res) => res.json()),
+  updateItem: (token, itemId, itemData) =>
+    fetch(`${BASE_URL}/items/${itemId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(itemData),
+    }).then((res) => res.json()),
+    
   releaseItem: (token, itemId) =>
     fetch(`${BASE_URL}/items/${itemId}/release`, {
       method: "PUT",
