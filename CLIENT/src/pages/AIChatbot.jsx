@@ -27,7 +27,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      content: "👋 Upload a delivery note (Image, PDF, or Excel) and I'll extract items for you!",
+      content: " Upload a delivery note (Image, PDF, or Excel) and I'll extract items for you!",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,8 +48,8 @@ const AIChatbot = ({ onItemsExtracted }) => {
     setIsLoading(true);
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: `📤 Uploaded: ${file.name}` },
-      { role: "bot", content: "⏳ Processing file..." },
+      { role: "user", content: ` Uploaded: ${file.name}` },
+      { role: "bot", content: " Processing file..." },
     ]);
 
     const formData = new FormData();
@@ -73,7 +73,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = {
             role: "bot",
-            content: `✅ Found ${data.count} items!\n\n${itemList}\n\nClick "Copy to Bulk Add" below.`,
+            content: ` Found ${data.count} items!\n\n${itemList}\n\nClick "Copy to Bulk Add" below.`,
           };
           return newMessages;
         });
@@ -102,7 +102,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = {
             role: "bot",
-            content: "❌ Upload failed. Please try again.",
+            content: " Upload failed. Please try again.",
           };
           return newMessages;
         });
@@ -137,7 +137,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: "bot",
-          content: `✅ Found ${items.length} items (OCR)!\n\n${itemList}\n\nClick "Copy to Bulk Add" below.`,
+          content: `Found ${items.length} items (OCR)!\n\n${itemList}\n\nClick "Copy to Bulk Add" below.`,
         };
         return newMessages;
       });
@@ -146,7 +146,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: "bot",
-          content: "❌ Failed to read image. Please try a clearer image.",
+          content: " Failed to read image. Please try a clearer image.",
         };
         return newMessages;
       });
@@ -163,7 +163,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
     setTimeout(() => setCopied(false), 2000);
     setMessages((prev) => [
       ...prev,
-      { role: "bot", content: "✅ Items copied to clipboard! Go to Bulk Add and paste." },
+      { role: "bot", content: " Items copied to clipboard! Go to Bulk Add and paste." },
     ]);
   };
 

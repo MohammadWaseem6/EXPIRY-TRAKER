@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { apiClient } from "../api/apiClient";
+import { apiClient } from "../Api/apiClient";
 import { Package, Eye, EyeOff, User, Mail, Lock, ArrowRight } from "lucide-react";
 
 const COLORS = {

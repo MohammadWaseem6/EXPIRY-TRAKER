@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
-import { apiClient } from "../api/apiClient";
+import { apiClient } from "../Api/apiClient";
 import {
   BarChart,
   Bar,
