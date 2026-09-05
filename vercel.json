@@ -7,5 +7,14 @@
   ],
   "installCommand": "cd CLIENT && npm install --include=dev",
   "buildCommand": "cd CLIENT && npm run build",
-  "outputDirectory": "CLIENT/dist"
+  "outputDirectory": "CLIENT/dist",
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
