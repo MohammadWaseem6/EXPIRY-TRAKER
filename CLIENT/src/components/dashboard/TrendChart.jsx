@@ -1,7 +1,7 @@
 const TrendChart = ({ data, max }) => {
   // Safety check: if no data, don't render anything
   if (!data || data.length === 0) {
-    return <div className="text-custom-sub text-sm p-4">No data to display</div>;
+    return <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm p-4 text-center">No data to display</div>;
   }
 
   // Using 100x40 viewBox so it scales perfectly to any parent width
@@ -53,7 +53,7 @@ const TrendChart = ({ data, max }) => {
       <svg 
         viewBox="0 0 100 40" 
         preserveAspectRatio="none" 
-        className="w-full h-32"
+        className="w-full h-24 sm:h-28 md:h-32"
       >
         <defs>
           <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
@@ -70,7 +70,7 @@ const TrendChart = ({ data, max }) => {
             y1={baseY - fraction * (chartHeight - 10)}
             x2="100"
             y2={baseY - fraction * (chartHeight - 10)}
-            className="stroke-custom-border"
+            className="stroke-gray-200 dark:stroke-gray-700"
             strokeWidth="0.5"
             strokeDasharray="2 2"
           />
@@ -90,12 +90,16 @@ const TrendChart = ({ data, max }) => {
         ))}
       </svg>
       
-      {/* Date labels below the SVG (Scaled as normal HTML to avoid stretching) */}
-      <div className="flex justify-between text-[10px] mt-2 text-custom-sub">
+      {/* Date labels below the SVG */}
+      <div className="flex justify-between text-[8px] sm:text-[10px] mt-1 sm:mt-2 text-gray-500 dark:text-gray-400">
         {pts.map((pt, idx) => {
           // Show first, last, and every 5th point to prevent overlapping
           if (idx === 0 || idx === pts.length - 1 || idx % 5 === 0) {
-            return <span key={idx}>{pt.label}</span>;
+            return (
+              <span key={idx} className="truncate max-w-[30px] sm:max-w-[60px]">
+                {pt.label}
+              </span>
+            );
           }
           return null;
         })}

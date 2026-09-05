@@ -12,7 +12,6 @@ import {
   Palette,
   FileText,
 } from "lucide-react";
-import { COLORS } from "../theme";
 import { exportItemsToCSV } from "../utils/exportCSV";
 
 const STORAGE_KEY = "storeops_settings";
@@ -37,52 +36,34 @@ const loadSettings = () => {
 };
 
 const Panel = ({ children, className = "" }) => (
-  <div
-    className={`rounded-xl p-5 ${className}`}
-    style={{
-      background: COLORS.panel,
-      border: `1px solid ${COLORS.panelBorder}`,
-    }}
-  >
+  <div className={`rounded-xl p-4 sm:p-5 ${className} bg-[#0f2540] border border-[#1c3a5e]`}>
     {children}
   </div>
 );
 
 const Field = ({ label, hint, children }) => (
-  <div
-    className="flex items-center justify-between py-3 border-b border-opacity-20"
-    style={{ borderBottom: `1px solid ${COLORS.grid}` }}
-  >
-    <div>
-      <p className="text-sm font-medium" style={{ color: COLORS.text }}>
-        {label}
-      </p>
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[#1c3a5e]/20 gap-3 sm:gap-0">
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium text-gray-100">{label}</p>
       {hint && (
-        <p className="text-xs mt-0.5" style={{ color: COLORS.sub }}>
-          {hint}
-        </p>
+        <p className="text-xs mt-0.5 text-gray-400">{hint}</p>
       )}
     </div>
-    {children}
+    <div className="flex-shrink-0">{children}</div>
   </div>
 );
 
 const Toggle = ({ checked, onChange, label }) => (
   <div className="flex items-center gap-3">
-    <span
-      className="text-xs"
-      style={{ color: checked ? COLORS.success : COLORS.sub }}
-    >
+    <span className={`text-xs ${checked ? 'text-[#3ecf8e]' : 'text-gray-400'}`}>
       {checked ? "On" : "Off"}
     </span>
     <button
       onClick={() => onChange(!checked)}
-      className="w-11 h-6 rounded-full relative transition-all duration-200"
-      style={{ background: checked ? COLORS.active : COLORS.grid }}
+      className={`w-11 h-6 rounded-full relative transition-all duration-200 ${checked ? 'bg-[#4a9fdb]' : 'bg-[#1c3a5e]'}`}
     >
       <span
-        className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200"
-        style={{ left: checked ? "22px" : "2px" }}
+        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200 ${checked ? 'left-[22px]' : 'left-[2px]'}`}
       />
     </button>
   </div>
@@ -95,20 +76,10 @@ const NumberInput = ({ value, onChange, min = 0, suffix }) => (
       min={min}
       value={value}
       onChange={(e) => onChange(Math.max(min, Number(e.target.value)))}
-      className="w-20 px-3 py-1.5 rounded-lg text-sm text-right outline-none transition focus:ring-2"
-      style={{
-        background: COLORS.bg,
-        border: `1px solid ${COLORS.panelBorder}`,
-        color: COLORS.text,
-        width: "70px",
-      }}
-      onFocus={(e) => (e.target.style.borderColor = COLORS.active)}
-      onBlur={(e) => (e.target.style.borderColor = COLORS.panelBorder)}
+      className="w-[70px] px-3 py-1.5 rounded-lg text-sm text-right outline-none transition focus:ring-2 focus:ring-[#4a9fdb]/50 bg-[#0a1a2f] border border-[#1c3a5e] text-gray-100"
     />
     {suffix && (
-      <span className="text-xs" style={{ color: COLORS.sub }}>
-        {suffix}
-      </span>
+      <span className="text-xs text-gray-400">{suffix}</span>
     )}
   </div>
 );
@@ -117,14 +88,7 @@ const Select = ({ value, onChange, options }) => (
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className="px-3 py-1.5 rounded-lg text-sm outline-none transition focus:ring-2"
-    style={{
-      background: COLORS.bg,
-      border: `1px solid ${COLORS.panelBorder}`,
-      color: COLORS.text,
-    }}
-    onFocus={(e) => (e.target.style.borderColor = COLORS.active)}
-    onBlur={(e) => (e.target.style.borderColor = COLORS.panelBorder)}
+    className="px-3 py-1.5 rounded-lg text-sm outline-none transition focus:ring-2 focus:ring-[#4a9fdb]/50 bg-[#0a1a2f] border border-[#1c3a5e] text-gray-100"
   >
     {options.map((opt) => (
       <option key={opt.value} value={opt.value}>
@@ -169,30 +133,21 @@ const SettingsView = ({ items = [] }) => {
   ];
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
+    <div className="flex flex-col gap-6 w-full min-h-screen bg-[#0a1a2f] p-4 sm:p-6 md:p-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2
-            className="text-2xl font-bold flex items-center gap-3"
-            style={{ color: COLORS.text }}
-          >
-            <SettingsIcon
-              className="w-6 h-6"
-              style={{ color: COLORS.active }}
-            />
+          <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-3 text-gray-100">
+            <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#4a9fdb]" />
             Settings
           </h2>
-          <p className="text-sm" style={{ color: COLORS.sub }}>
+          <p className="text-xs sm:text-sm text-gray-400">
             Manage your preferences and inventory settings
           </p>
         </div>
         <div className="flex items-center gap-3">
           {saved && (
-            <span
-              className="flex items-center gap-1 text-sm"
-              style={{ color: COLORS.success }}
-            >
+            <span className="flex items-center gap-1 text-sm text-[#3ecf8e]">
               <Check className="w-4 h-4" /> Settings saved
             </span>
           )}
@@ -200,10 +155,7 @@ const SettingsView = ({ items = [] }) => {
       </div>
 
       {/* Section Tabs */}
-      <div
-        className="flex gap-1 p-1 rounded-xl overflow-x-auto"
-        style={{ background: COLORS.bg }}
-      >
+      <div className="flex gap-1 p-1 rounded-xl overflow-x-auto bg-[#0a1a2f]">
         {sections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
@@ -211,15 +163,15 @@ const SettingsView = ({ items = [] }) => {
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap"
-              style={{
-                background: isActive ? COLORS.panel : "transparent",
-                color: isActive ? COLORS.text : COLORS.sub,
-                border: isActive ? `1px solid ${COLORS.panelBorder}` : "none",
-              }}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+                isActive 
+                  ? 'bg-[#0f2540] text-gray-100 border border-[#1c3a5e]' 
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
             >
               <Icon className="w-4 h-4" />
-              {section.label}
+              <span className="hidden xs:inline">{section.label}</span>
+              <span className="xs:hidden">{section.label.charAt(0)}</span>
             </button>
           );
         })}
@@ -229,11 +181,8 @@ const SettingsView = ({ items = [] }) => {
       {activeSection === "general" && (
         <Panel>
           <div className="flex items-center gap-2 mb-3">
-            <Palette className="w-4 h-4" style={{ color: COLORS.sub }} />
-            <span
-              className="text-xs font-semibold tracking-wider"
-              style={{ color: COLORS.sub }}
-            >
+            <Palette className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-semibold tracking-wider text-gray-400">
               APPEARANCE & PREFERENCES
             </span>
           </div>
@@ -242,9 +191,9 @@ const SettingsView = ({ items = [] }) => {
               value={settings.theme}
               onChange={(v) => update("theme", v)}
               options={[
-                { value: "dark", label: "🌙 Dark" },
-                { value: "light", label: "☀️ Light" },
-                { value: "system", label: "💻 System" },
+                { value: "dark", label: "Dark" },
+                { value: "light", label: "Light" },
+                { value: "system", label: "System" },
               ]}
             />
           </Field>
@@ -285,50 +234,29 @@ const SettingsView = ({ items = [] }) => {
       {activeSection === "account" && (
         <Panel>
           <div className="flex items-center gap-2 mb-3">
-            <User className="w-4 h-4" style={{ color: COLORS.sub }} />
-            <span
-              className="text-xs font-semibold tracking-wider"
-              style={{ color: COLORS.sub }}
-            >
+            <User className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-semibold tracking-wider text-gray-400">
               ACCOUNT INFORMATION
             </span>
           </div>
-          <div
-            className="flex items-center gap-4 py-3 border-b"
-            style={{ borderColor: COLORS.grid }}
-          >
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold"
-              style={{ background: `${COLORS.active}33`, color: COLORS.active }}
-            >
+          <div className="flex items-center gap-4 py-3 border-b border-[#1c3a5e]">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold bg-[#4a9fdb]/20 text-[#4a9fdb] flex-shrink-0">
               {user?.name?.charAt(0) || "U"}
             </div>
-            <div>
-              <p
-                className="text-lg font-semibold"
-                style={{ color: COLORS.text }}
-              >
+            <div className="min-w-0 flex-1">
+              <p className="text-base sm:text-lg font-semibold text-gray-100 truncate">
                 {user?.name || "User"}
               </p>
-              <p className="text-sm" style={{ color: COLORS.sub }}>
+              <p className="text-xs sm:text-sm text-gray-400 truncate">
                 {user?.email || "user@example.com"}
               </p>
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-full inline-block mt-1"
-                style={{
-                  background: "rgba(62,207,142,0.15)",
-                  color: COLORS.success,
-                }}
-              >
-                ● Active
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full inline-block mt-1 bg-[#3ecf8e]/15 text-[#3ecf8e]">
+                Active
               </span>
             </div>
           </div>
           <div className="pt-3">
-            <button
-              className="px-4 py-2 rounded-lg text-sm font-medium transition hover:opacity-80"
-              style={{ background: COLORS.panelBorder, color: COLORS.text }}
-            >
+            <button className="px-4 py-2 rounded-lg text-sm font-medium transition hover:opacity-80 bg-[#1c3a5e] text-gray-100">
               Change Password
             </button>
           </div>
@@ -339,11 +267,8 @@ const SettingsView = ({ items = [] }) => {
       {activeSection === "alerts" && (
         <Panel>
           <div className="flex items-center gap-2 mb-3">
-            <Bell className="w-4 h-4" style={{ color: COLORS.sub }} />
-            <span
-              className="text-xs font-semibold tracking-wider"
-              style={{ color: COLORS.sub }}
-            >
+            <Bell className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-semibold tracking-wider text-gray-400">
               NOTIFICATION PREFERENCES
             </span>
           </div>
@@ -383,11 +308,8 @@ const SettingsView = ({ items = [] }) => {
       {activeSection === "data" && (
         <Panel>
           <div className="flex items-center gap-2 mb-3">
-            <Database className="w-4 h-4" style={{ color: COLORS.sub }} />
-            <span
-              className="text-xs font-semibold tracking-wider"
-              style={{ color: COLORS.sub }}
-            >
+            <Database className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-semibold tracking-wider text-gray-400">
               DATA MANAGEMENT
             </span>
           </div>
@@ -398,8 +320,7 @@ const SettingsView = ({ items = [] }) => {
             <button
               onClick={() => exportItemsToCSV(items, "full-inventory")}
               disabled={items.length === 0}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition disabled:opacity-40 hover:opacity-80"
-              style={{ background: COLORS.active, color: "#fff" }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition disabled:opacity-40 hover:opacity-80 bg-[#4a9fdb] text-white disabled:cursor-not-allowed"
             >
               <Download className="w-3.5 h-3.5" /> Export CSV
             </button>
@@ -420,8 +341,7 @@ const SettingsView = ({ items = [] }) => {
                 a.click();
                 URL.revokeObjectURL(url);
               }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition hover:opacity-80"
-              style={{ background: COLORS.panelBorder, color: COLORS.text }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition hover:opacity-80 bg-[#1c3a5e] text-gray-100"
             >
               <FileText className="w-3.5 h-3.5" /> Backup Settings
             </button>
@@ -433,15 +353,13 @@ const SettingsView = ({ items = [] }) => {
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition hover:opacity-80"
-          style={{ background: COLORS.active, color: "#fff" }}
+          className="flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg text-sm font-medium transition hover:opacity-80 bg-[#4a9fdb] text-white flex-1 sm:flex-none justify-center"
         >
           <Save className="w-4 h-4" /> Save Changes
         </button>
         <button
           onClick={handleReset}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition hover:opacity-80"
-          style={{ background: "rgba(194,62,143,0.15)", color: COLORS.danger }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition hover:opacity-80 bg-[#c23e8f]/15 text-[#c23e8f] flex-1 sm:flex-none justify-center"
         >
           <RefreshCw className="w-4 h-4" /> Reset to Defaults
         </button>

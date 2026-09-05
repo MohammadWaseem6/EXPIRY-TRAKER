@@ -12,22 +12,13 @@ import {
   Image,
 } from "lucide-react";
 
-const COLORS = {
-  bg: "#0a1a2f",
-  panel: "#0f2540",
-  panelBorder: "#1c3a5e",
-  text: "#e8eef7",
-  sub: "#7f97b8",
-  active: "#4a9fdb",
-};
-
 const AIChatbot = ({ onItemsExtracted }) => {
   const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      content: " Upload a delivery note (Image, PDF, or Excel) and I'll extract items for you!",
+      content: "Upload a delivery note (Image, PDF, or Excel) and I'll extract items for you!",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,8 +39,8 @@ const AIChatbot = ({ onItemsExtracted }) => {
     setIsLoading(true);
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: ` Uploaded: ${file.name}` },
-      { role: "bot", content: " Processing file..." },
+      { role: "user", content: `Uploaded: ${file.name}` },
+      { role: "bot", content: "Processing file..." },
     ]);
 
     const formData = new FormData();
@@ -73,7 +64,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = {
             role: "bot",
-            content: ` Found ${data.count} items!\n\n${itemList}\n\nClick "Copy to Bulk Add" below.`,
+            content: `Found ${data.count} items!\n\n${itemList}\n\nClick "Copy to Bulk Add" below.`,
           };
           return newMessages;
         });
@@ -88,7 +79,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = {
             role: "bot",
-            content: `❌ Error: ${data.error || "Unsupported file type"}`,
+            content: `Error: ${data.error || "Unsupported file type"}`,
           };
           return newMessages;
         });
@@ -102,7 +93,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = {
             role: "bot",
-            content: " Upload failed. Please try again.",
+            content: "Upload failed. Please try again.",
           };
           return newMessages;
         });
@@ -146,7 +137,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: "bot",
-          content: " Failed to read image. Please try a clearer image.",
+          content: "Failed to read image. Please try a clearer image.",
         };
         return newMessages;
       });
@@ -163,53 +154,49 @@ const AIChatbot = ({ onItemsExtracted }) => {
     setTimeout(() => setCopied(false), 2000);
     setMessages((prev) => [
       ...prev,
-      { role: "bot", content: " Items copied to clipboard! Go to Bulk Add and paste." },
+      { role: "bot", content: "Items copied to clipboard! Go to Bulk Add and paste." },
     ]);
   };
 
   return (
     <>
-      {/* Chat Button */}
+      {/* Chat Button - Mobile Optimized */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg hover:scale-105 transition"
-        style={{ background: COLORS.active, color: "#fff" }}
+        className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50 p-3 sm:p-4 rounded-full shadow-lg hover:scale-105 transition duration-200 bg-blue-500 hover:bg-blue-600 text-white"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        {isOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />}
       </button>
 
-      {/* Chat Window */}
+      {/* Chat Window - Mobile Responsive */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-6 z-50 w-96 h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-          style={{
-            background: COLORS.panel,
-            border: `1px solid ${COLORS.panelBorder}`,
-          }}
+          className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 w-[calc(100%-24px)] sm:w-96 h-[70vh] sm:h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden bg-[#0f2540] dark:bg-[#0f2540] border border-[#1c3a5e]"
         >
           {/* Header */}
-          <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: COLORS.panelBorder }}>
+          <div className="p-3 sm:p-4 border-b border-[#1c3a5e] flex items-center justify-between bg-[#0f2540]">
             <div className="flex items-center gap-2">
-              <Bot className="w-5 h-5" style={{ color: COLORS.active }} />
-              <span className="font-semibold" style={{ color: COLORS.text }}>AI Assistant</span>
+              <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+              <span className="font-semibold text-sm sm:text-base text-gray-100">AI Assistant</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="p-1 rounded hover:bg-white/10" style={{ color: COLORS.sub }}>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              className="p-1 rounded hover:bg-white/10 transition text-gray-400 hover:text-white"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#0a1a2f]">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[80%] p-3 rounded-lg text-sm whitespace-pre-wrap ${
-                    msg.role === "user" ? "bg-blue-600 text-white" : "bg-white/10 text-gray-200"
+                  className={`max-w-[85%] sm:max-w-[80%] p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm whitespace-pre-wrap ${
+                    msg.role === "user" 
+                      ? "bg-blue-500 text-white" 
+                      : "bg-white/5 text-gray-200"
                   }`}
-                  style={{
-                    background: msg.role === "user" ? COLORS.active : "rgba(255,255,255,0.05)",
-                    color: msg.role === "user" ? "#fff" : COLORS.text,
-                  }}
                 >
                   {msg.content}
                 </div>
@@ -229,35 +216,39 @@ const AIChatbot = ({ onItemsExtracted }) => {
 
           {/* Copy Button */}
           {extractedItems.length > 0 && (
-            <div className="px-4 py-2 border-t" style={{ borderColor: COLORS.panelBorder }}>
+            <div className="px-3 sm:px-4 py-2 border-t border-[#1c3a5e] bg-[#0f2540]">
               <button
                 onClick={handleCopyToBulk}
-                className="w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition"
-                style={{ background: COLORS.active, color: "#fff" }}
+                className="w-full py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition hover:opacity-80 bg-blue-500 text-white"
               >
-                {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy to Bulk Add</>}
+                {copied ? (
+                  <><Check className="w-4 h-4" /> Copied!</>
+                ) : (
+                  <><Copy className="w-4 h-4" /> Copy to Bulk Add</>
+                )}
               </button>
             </div>
           )}
 
-          {/* Input Area */}
-          <div className="p-4 border-t flex gap-2" style={{ borderColor: COLORS.panelBorder }}>
-            <input
-              type="file"
-              accept="image/*,.pdf,.xlsx,.xls,.csv"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-1 py-2 rounded-lg text-sm font-medium transition hover:opacity-80 flex items-center justify-center gap-2"
-              style={{ background: COLORS.active, color: "#fff" }}
-            >
-              <Upload className="w-4 h-4" /> Upload File
-            </button>
-            <span className="text-xs" style={{ color: COLORS.sub }}>
-              (Image, PDF, Excel)
+          {/* Input Area - Mobile Optimized */}
+          <div className="p-3 sm:p-4 border-t border-[#1c3a5e] flex flex-col sm:flex-row gap-2 bg-[#0f2540]">
+            <div className="flex flex-1 gap-2">
+              <input
+                type="file"
+                accept="image/*,.pdf,.xlsx,.xls,.csv"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-medium transition hover:opacity-80 flex items-center justify-center gap-1.5 bg-blue-500 text-white"
+              >
+                <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Upload
+              </button>
+            </div>
+            <span className="text-[8px] sm:text-xs text-gray-400 text-center sm:text-left">
+              Image, PDF, Excel
             </span>
           </div>
         </div>

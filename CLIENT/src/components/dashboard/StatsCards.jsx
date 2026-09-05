@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 
 const StatsCards = ({ stats }) => {
-  // Using Tailwind arbitrary values for the dynamic colors
   const cards = [
     {
       label: "Total Items",
@@ -36,26 +35,30 @@ const StatsCards = ({ stats }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-xl p-4 bg-custom-panel border border-custom-border"
+          className="rounded-xl p-3 sm:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-custom-sub">{card.label}</p>
-              <p className="text-2xl font-bold text-custom-text">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">
+                {card.label}
+              </p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 dark:text-white truncate">
                 {card.value}
               </p>
               <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-[#5b7699]">Current stock</span>
+                <span className="text-[8px] sm:text-[10px] text-gray-400 dark:text-gray-500">
+                  Current stock
+                </span>
               </div>
             </div>
 
-            {/* Dynamic background and icon color applied via classes */}
-            <div className={`p-3 rounded-xl ${card.color}`}>
-              <card.icon className="w-6 h-6" />
+            {/* Icon container with dynamic colors */}
+            <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 ${card.color}`}>
+              <card.icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
             </div>
           </div>
         </div>

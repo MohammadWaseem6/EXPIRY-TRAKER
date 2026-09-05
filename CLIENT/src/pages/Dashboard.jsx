@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
-import { apiClient } from "../Api/apiClient";
+import { apiClient } from "../api/apiClient";
 import {
   Package,
   AlertTriangle,
@@ -38,13 +38,27 @@ const Dashboard = () => {
   const { token, logout } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed to false by default
   const [activeTab, setActiveTab] = useState("dashboard");
   const [bulkItems, setBulkItems] = useState("");
   const [bulkMessage, setBulkMessage] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiItems, setAiItems] = useState([]);
-  const [aiError, setAiError] = useState("");
+
+  // Close sidebar on window resize (if screen becomes large, we want it open)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    
+    // Set initial state based on screen size
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -57,6 +71,8 @@ const Dashboard = () => {
         .finally(() => setLoading(false));
     }
   }, [token]);
+
+  // ... rest of your stats, trend, etc. (keep the same) ...
 
   const stats = useMemo(() => {
     const totalItems = items.length;
@@ -112,30 +128,6 @@ const Dashboard = () => {
     const max = Math.max(1, ...days.map((d) => d.count));
     return { days, max };
   }, [items]);
-
-  const buckets = ["Expired", "0-3d", "4-7d", "8-14d", "15d+"];
-  // eslint-disable-next-line no-unused-vars
-  const heatmap = useMemo(() => {
-    const cats = stats.categories.slice(0, 6);
-    const bucketOf = (d) => {
-      if (d < 0) return 0;
-      if (d <= 3) return 1;
-      if (d <= 7) return 2;
-      if (d <= 14) return 3;
-      return 4;
-    };
-    const grid = cats.map((cat) => {
-      const row = buckets.map(() => 0);
-      items
-        .filter((i) => (i.category || "Uncategorized") === cat)
-        .forEach((i) => {
-          row[bucketOf(daysUntil(i.expiryDate))] += 1;
-        });
-      return { cat, row };
-    });
-    const max = Math.max(1, ...grid.flatMap((g) => g.row));
-    return { grid, max };
-  }, [items, stats.categories]);
 
   const statusDonut = useMemo(() => {
     const total = stats.totalItems || 1;
@@ -205,26 +197,13 @@ const Dashboard = () => {
       }));
   }, [items]);
 
-  const expiredItems = useMemo(() => {
-    return items
-      .filter((i) => daysUntil(i.expiryDate) < 0)
-      .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-  }, [items]);
-
   const handleRelease = async (itemId) => {
     if (!itemId) return;
-
-    if (
-      window.confirm(
-        "Release this item? It will be permanently removed from inventory.",
-      )
-    ) {
+    if (window.confirm("Release this item? It will be permanently removed from inventory.")) {
       try {
         const response = await apiClient.releaseItem(token, itemId);
         if (response.message) {
-          setItems((prevItems) =>
-            prevItems.filter((item) => item._id !== itemId),
-          );
+          setItems((prevItems) => prevItems.filter((item) => item._id !== itemId));
           setBulkMessage("Item released and removed from inventory!");
           setTimeout(() => setBulkMessage(""), 3000);
         } else {
@@ -238,9 +217,7 @@ const Dashboard = () => {
 
   const handleBulkAdd = async () => {
     if (!bulkItems.trim()) {
-      setBulkMessage(
-        "Please paste items in the format: Name, Category, ExpiryDate, Quantity, Price",
-      );
+      setBulkMessage("Please paste items in the format: Name, Category, ExpiryDate, Quantity, Price");
       setTimeout(() => setBulkMessage(""), 3000);
       return;
     }
@@ -257,8 +234,6 @@ const Dashboard = () => {
       };
     });
 
-    // Dedupe only WITHIN this paste batch — combine quantities for exact duplicates.
-    // No lookup against existing DB items, so nothing merges into old records.
     const batchMap = new Map();
     for (const newItem of parsedItems) {
       const key = `${newItem.name}|${newItem.category}|${newItem.expiryDate}|${newItem.price}`;
@@ -291,15 +266,11 @@ const Dashboard = () => {
     const duplicatesInBatch = parsedItems.length - itemsToCreate.length;
     let msg = "";
     if (success > 0 && failed === 0) {
-      msg = ` ${success} items created successfully!${
-        duplicatesInBatch > 0
-          ? ` (${duplicatesInBatch} duplicate rows merged within this batch)`
-          : ""
-      }`;
+    msg = ` ${success} items created successfully!${duplicatesInBatch > 0 ? ` (${duplicatesInBatch} duplicate rows merged)` : ""}`;
     } else if (success > 0 && failed > 0) {
-      msg = ` ${success} items created, ${failed} failed.`;
+      msg = `${success} items created, ${failed} failed.`;
     } else {
-      msg = ` Failed to add items. Please check the format.`;
+      msg = "Failed to add items. Please check the format.";
     }
 
     setBulkMessage(msg);
@@ -317,47 +288,49 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 h-screen bg-[#0a1a2f]">
+      <div className="flex flex-col items-center justify-center gap-3 min-h-screen bg-[#0a1a2f]">
         <div className="relative w-10 h-10">
           <div className="absolute inset-0 rounded-full border-2 border-[#1c3a5e]" />
           <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#4a9fdb] animate-spin" />
         </div>
-        <span className="text-xs tracking-wide text-[#5b7699]">
-          Loading inventory…
-        </span>
+        <span className="text-xs tracking-wide text-[#5b7699]">Loading inventory...</span>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen bg-[#0a1a2f] text-[#e8eef7]">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? "w-70" : "w-[90px]"
-        } flex flex-col flex-shrink-0 transition-[width] duration-300 bg-[#0c2038]/95 border-r border-[#16304f] overflow-hidden`}
+        className={`fixed lg:relative z-50 h-full flex flex-col flex-shrink-0 transition-all duration-300 bg-[#0c2038] border-r border-[#16304f] overflow-hidden ${
+          sidebarOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:translate-x-0 lg:w-[72px]"
+        }`}
       >
         <div className="flex items-center h-16 px-4 border-b border-[#16304f] flex-shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className={`flex items-center gap-2.5 min-w-0 ${!sidebarOpen && "lg:opacity-0"}`}>
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#4a9fdb] to-[#2f6fa8] shrink-0">
               <Package className="w-4.5 h-4.5 text-white" strokeWidth={2.25} />
             </div>
             {sidebarOpen && (
-              <span className="text-[15px] font-semibold tracking-tight truncate whitespace-nowrap">
+              <span className="text-[15px] font-semibold tracking-tight truncate whitespace-nowrap text-white">
                 Store
               </span>
             )}
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 rounded-md text-[#5b7699] hover:text-[#c9d8ec] hover:bg-white/5 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-md text-[#5b7699] hover:text-[#c9d8ec] hover:bg-white/5 transition-colors flex-shrink-0 ml-auto lg:hidden"
             aria-label="Toggle sidebar"
           >
-            {sidebarOpen ? (
-              <X className="w-4 h-4" />
-            ) : (
-              <Menu className="w-4 h-4" />
-            )}
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -367,21 +340,28 @@ const Dashboard = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setSidebarOpen(false);
+                }}
                 className={`group relative flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive
                     ? "bg-[#4a9fdb]/10 text-[#4892ba]"
                     : "text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04]"
-                } ${!sidebarOpen && "justify-center"}`}
+                } ${!sidebarOpen && "lg:justify-center"}`}
               >
                 {isActive && (
                   <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[#4a9fdb]" />
                 )}
                 <item.icon
-                  className="w-[18px] h-[18px] flex-shrink-0"
+                  className={`w-[18px] h-[18px] flex-shrink-0 ${
+                    isActive ? "text-[#4a9fdb]" : "text-[#7f97b8]"
+                  }`}
                   strokeWidth={isActive ? 2.25 : 1.9}
                 />
-                {sidebarOpen && <span className="truncate">{item.label}</span>}
+                <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>
+                  {item.label}
+                </span>
               </button>
             );
           })}
@@ -389,39 +369,33 @@ const Dashboard = () => {
           <div className="pt-3 mt-3 border-t border-[#16304f]/80 space-y-0.5">
             <RouterLink
               to="/stock"
+              onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
-                !sidebarOpen && "justify-center"
+                !sidebarOpen && "lg:justify-center"
               }`}
             >
-              <Package
-                className="w-[18px] h-[18px] flex-shrink-0"
-                strokeWidth={1.9}
-              />
-              {sidebarOpen && <span>Stock</span>}
+              <Package className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+              <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Stock</span>
             </RouterLink>
             <RouterLink
               to="/reports"
+              onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
-                !sidebarOpen && "justify-center"
+                !sidebarOpen && "lg:justify-center"
               }`}
             >
-              <FileSpreadsheet
-                className="w-[18px] h-[18px] flex-shrink-0"
-                strokeWidth={1.9}
-              />
-              {sidebarOpen && <span>Reports</span>}
+              <FileSpreadsheet className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+              <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Reports</span>
             </RouterLink>
             <RouterLink
               to="/charts"
+              onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
-                !sidebarOpen && "justify-center"
+                !sidebarOpen && "lg:justify-center"
               }`}
             >
-              <BarChart3
-                className="w-[18px] h-[18px] flex-shrink-0"
-                strokeWidth={1.9}
-              />
-              {sidebarOpen && <span>Charts</span>}
+              <BarChart3 className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+              <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Charts</span>
             </RouterLink>
           </div>
         </nav>
@@ -430,36 +404,42 @@ const Dashboard = () => {
           <button
             onClick={logout}
             className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#e0708f] hover:bg-[#c23e8f]/10 transition-colors ${
-              !sidebarOpen && "justify-center"
+              !sidebarOpen && "lg:justify-center"
             }`}
           >
-            <LogOut
-              className="w-[18px] h-[18px] flex-shrink-0"
-              strokeWidth={1.9}
-            />
-            {sidebarOpen && <span>Logout</span>}
+            <LogOut className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+            <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-y-auto p-5 md:p-8 bg-[radial-gradient(ellipse_at_top,rgba(74,159,219,0.06),transparent_55%)]">
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-[radial-gradient(ellipse_at_top,rgba(74,159,219,0.06),transparent_55%)]">
+        {/* Hamburger Menu - Mobile Only */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-lg bg-[#0c2038] border border-[#16304f] text-[#7f97b8] hover:text-white transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         {activeTab === "dashboard" && (
-          <div className="space-y-5 max-w-[1400px]">
+          <div className="space-y-4 sm:space-y-5 max-w-[1400px] pt-12 lg:pt-0">
             <DashboardHeader
               title="Store Dashboard"
               subtitle="Live stock overview"
             />
+
             <StatsCards stats={stats} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
               <Panel>
                 <Eyebrow right="29-day timeline">EXPIRY TIMELINE</Eyebrow>
-                <div className="flex items-end gap-2.5 mb-3">
-                  <span className="text-4xl font-bold tracking-tight text-[#e8eef7]">
+                <div className="flex flex-wrap items-end gap-2.5 mb-3">
+                  <span className="text-3xl sm:text-4xl font-bold tracking-tight text-[#e8eef7]">
                     {trend.days.reduce((s, d) => s + d.count, 0)}
                   </span>
-                  <span className="mb-1 text-xs px-2 py-1 rounded-md bg-[#c23e8f]/12 text-[#e05fae] font-medium">
+                  <span className="mb-0.5 text-[10px] sm:text-xs px-2 py-1 rounded-md bg-[#c23e8f]/12 text-[#e05fae] font-medium">
                     {stats.expiringSoon} due in 3 days
                   </span>
                 </div>
@@ -468,11 +448,13 @@ const Dashboard = () => {
 
               <Panel>
                 <Eyebrow right="All stock">STOCK STATUS</Eyebrow>
-                <StatusDonut data={statusDonut} />
+                <div className="flex justify-center items-center py-2">
+                  <StatusDonut data={statusDonut} />
+                </div>
               </Panel>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
               <ValueCard
                 title="TOTAL VALUE"
                 value={`$${stats.totalValue.toFixed(0)}`}
@@ -499,13 +481,13 @@ const Dashboard = () => {
         )}
 
         {activeTab === "stock" && (
-          <div className="max-w-[1400px]">
-            <div className="flex justify-between items-end mb-5">
+          <div className="max-w-[1400px] pt-12 lg:pt-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-[#e8eef7]">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#e8eef7]">
                   Stock Overview
                 </h1>
-                <p className="text-sm mt-1 text-[#7f97b8]">
+                <p className="text-xs sm:text-sm mt-1 text-[#7f97b8]">
                   {items.length} items in inventory
                 </p>
               </div>
@@ -522,97 +504,78 @@ const Dashboard = () => {
               </button>
             </div>
 
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-1"
-              style={{ maxHeight: "620px", overflowY: "auto" }}
-            >
-              {items.map((item) => {
-                const days = daysUntil(item.expiryDate);
-                let accent = "#3ecf8e";
-                let statusText = "Fresh";
-                let chipClasses = "bg-[#3ecf8e]/12 text-[#3ecf8e]";
-                if (days < 0) {
-                  accent = "#c23e8f";
-                  statusText = "Expired";
-                  chipClasses = "bg-[#c23e8f]/12 text-[#e05fae]";
-                } else if (days <= 3) {
-                  accent = "#f0a63a";
-                  statusText = "Soon";
-                  chipClasses = "bg-[#f0a63a]/12 text-[#f0a63a]";
-                }
+            <div className="h-[calc(100vh-200px)] overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                {items.map((item) => {
+                  const days = daysUntil(item.expiryDate);
+                  let accent = "#3ecf8e";
+                  let statusText = "Fresh";
+                  let chipClasses = "bg-[#3ecf8e]/12 text-[#3ecf8e]";
+                  if (days < 0) {
+                    accent = "#c23e8f";
+                    statusText = "Expired";
+                    chipClasses = "bg-[#c23e8f]/12 text-[#e05fae]";
+                  } else if (days <= 3) {
+                    accent = "#f0a63a";
+                    statusText = "Soon";
+                    chipClasses = "bg-[#f0a63a]/12 text-[#f0a63a]";
+                  }
 
-                return (
-                  <div
-                    key={item._id}
-                    className="rounded-xl p-4 bg-[#0f2540] border border-[#1c3a5e] hover:border-[#2c5581] transition-colors duration-150"
-                    style={{ borderLeft: `3px solid ${accent}` }}
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3
-                          className="font-semibold text-[#e8eef7] truncate"
-                          title={item.name}
+                  return (
+                    <div
+                      key={item._id}
+                      className="rounded-xl p-3 sm:p-4 bg-[#0f2540] border border-[#1c3a5e] hover:border-[#2c5581] transition-colors duration-150"
+                      style={{ borderLeft: `3px solid ${accent}` }}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-[#e8eef7] truncate text-sm sm:text-base">
+                            {item.name}
+                          </h3>
+                          <p className="text-[10px] sm:text-xs mt-0.5 text-[#7f97b8]">
+                            {item.category || "Uncategorized"}
+                          </p>
+                        </div>
+                        <span className={`flex-shrink-0 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-md ${chipClasses}`}>
+                          {statusText}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3 sm:mt-4 pt-3 border-t border-[#1c3a5e]/60 text-xs sm:text-sm">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] sm:text-[11px] text-[#5b7699]">Qty</span>
+                          <span className="text-[#e8eef7] font-medium">{item.quantity || 0}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] sm:text-[11px] text-[#5b7699]">Price</span>
+                          <span className="text-[#e8eef7] font-medium">${item.price || 0}</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-[10px] sm:text-[11px] text-[#5b7699]">{days < 0 ? "Overdue" : "Left"}</span>
+                          <span className="font-medium" style={{ color: accent }}>
+                            {days < 0 ? `${Math.abs(days)}d` : `${days}d`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          onClick={() => handleRelease(item._id)}
+                          className="text-[10px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-[#3ecf8e]/12 text-[#3ecf8e] border border-[#3ecf8e]/25 hover:bg-[#3ecf8e]/20 transition-colors"
                         >
-                          {item.name}
-                        </h3>
-                        <p className="text-xs mt-0.5 text-[#7f97b8]">
-                          {item.category || "Uncategorized"}
-                        </p>
-                      </div>
-                      <span
-                        className={`flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md ${chipClasses}`}
-                      >
-                        {statusText}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#1c3a5e]/60 text-sm">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] text-[#5b7699]">Qty</span>
-                        <span className="text-[#e8eef7] font-medium">
-                          {item.quantity || 0}
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[11px] text-[#5b7699]">
-                          Price
-                        </span>
-                        <span className="text-[#e8eef7] font-medium">
-                          ${item.price || 0}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[11px] text-[#5b7699]">
-                          {days < 0 ? "Overdue" : "Left"}
-                        </span>
-                        <span className="font-medium" style={{ color: accent }}>
-                          {days < 0 ? `${Math.abs(days)}d` : `${days}d`}
-                        </span>
+                          <CheckCircle className="w-3.5 h-3.5" /> Release
+                        </button>
                       </div>
                     </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        onClick={() => handleRelease(item._id)}
-                        className="text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-[#3ecf8e]/12 text-[#3ecf8e] border border-[#3ecf8e]/25 hover:bg-[#3ecf8e]/20 transition-colors"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Release
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             {items.length === 0 && (
-              <div className="rounded-xl p-14 text-center bg-[#0f2540] border border-dashed border-[#1c3a5e]">
-                <Package
-                  className="w-10 h-10 mx-auto text-[#3a5578]"
-                  strokeWidth={1.5}
-                />
-                <p className="mt-3 text-sm text-[#7f97b8]">
-                  No items in inventory
-                </p>
+              <div className="rounded-xl p-10 sm:p-14 text-center bg-[#0f2540] border border-dashed border-[#1c3a5e]">
+                <Package className="w-10 h-10 mx-auto text-[#3a5578]" strokeWidth={1.5} />
+                <p className="mt-3 text-sm text-[#7f97b8]">No items in inventory</p>
               </div>
             )}
           </div>
@@ -623,32 +586,29 @@ const Dashboard = () => {
         )}
 
         {activeTab === "bulk" && (
-          <div className="max-w-[900px]">
-            <h1 className="text-2xl font-bold tracking-tight text-[#e8eef7]">
-              Bulk Add Items
-            </h1>
-            <p className="text-sm mt-1.5 text-[#7f97b8]">
-              Paste items manually in the format: Name, Category, ExpiryDate,
-              Quantity, Price
+          <div className="max-w-[900px] pt-12 lg:pt-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#e8eef7]">Bulk Add Items</h1>
+            <p className="text-xs sm:text-sm mt-1.5 text-[#7f97b8]">
+              Paste items manually in the format: Name, Category, ExpiryDate, Quantity, Price
             </p>
 
-            <div className="mt-5 p-5 rounded-xl bg-[#0f2540] border border-[#1c3a5e]">
+            <div className="mt-4 sm:mt-5 p-4 sm:p-5 rounded-xl bg-[#0f2540] border border-[#1c3a5e]">
               <textarea
                 rows="10"
                 value={bulkItems}
                 onChange={(e) => setBulkItems(e.target.value)}
                 placeholder="Milk, Dairy, 2026-09-15, 10, 4.99\nBread, Bakery, 2026-08-30, 5, 2.49"
-                className="w-full p-3.5 rounded-lg text-sm font-mono leading-relaxed bg-[#0a1a2f] text-[#e8eef7] border border-[#1c3a5e] outline-none focus:border-[#4a9fdb] transition-colors resize-y"
+                className="w-full p-3 sm:p-3.5 rounded-lg text-xs sm:text-sm font-mono leading-relaxed bg-[#0a1a2f] text-[#e8eef7] border border-[#1c3a5e] outline-none focus:border-[#4a9fdb] transition-colors resize-y"
               />
-              <div className="flex items-center gap-3 mt-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4">
                 <button
                   onClick={handleBulkAdd}
-                  className="px-6 py-2.5 text-sm font-medium bg-[#4a9fdb] text-white rounded-lg hover:bg-[#3d8ec8] transition-colors"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 text-sm font-medium bg-[#4a9fdb] text-white rounded-lg hover:bg-[#3d8ec8] transition-colors hover:shadow-lg hover:shadow-[#4a9fdb]/30 cursor-pointer"
                 >
                   Add All Items
                 </button>
                 {bulkMessage && (
-                  <p className="text-sm text-[#3ecf8e]">{bulkMessage}</p>
+                  <p className="text-sm text-[#3ecf8e] break-words">{bulkMessage}</p>
                 )}
               </div>
             </div>
@@ -658,9 +618,7 @@ const Dashboard = () => {
         {activeTab === "settings" && <SettingsView />}
       </main>
 
-      <AIChatbot
-        onItemsExtracted={(items) => console.log("Items extracted:", items)}
-      />
+      <AIChatbot onItemsExtracted={(items) => console.log("Items extracted:", items)} />
     </div>
   );
 };
