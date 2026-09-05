@@ -99,7 +99,7 @@ const Register = () => {
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: COLORS.sub }} />
               <input
                 type="text"
-                placeholder="John Doe"
+                placeholder="Your Name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
@@ -124,7 +124,7 @@ const Register = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: COLORS.sub }} />
               <input
                 type="email"
-                placeholder="you@company.com"
+                placeholder="your email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required

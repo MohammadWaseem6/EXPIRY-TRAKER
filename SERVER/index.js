@@ -13,36 +13,46 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// FIXED CORS - Allow your Render backend URL
-app.use(
-  cors({
-    origin: [
-      "https://expiry-traker.onrender.com",  // Your backend URL
-      "http://localhost:5173",                // Local frontend
-      "http://localhost:5001",                // Local backend
-      "https://your-frontend.vercel.app"      // Your Vercel frontend (add this)
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+// ✅ CORS - Fixed (no app.options('*', cors()))
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 connectDB();
 
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
 
+// Health check
 app.get("/", (req, res) => {
-  res.json({ message: "Server is running!" });
+  res.json({ 
+    message: "Server is running!",
+    status: "OK",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`📍 ${PORT === 5001 ? 'Local' : 'Production'} mode`);
+  console.log(` Server running on port ${PORT}`);
+  console.log(` URL: http://localhost:${PORT}`);
 });
