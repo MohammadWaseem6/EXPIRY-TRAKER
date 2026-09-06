@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5001/api";
+const BASE_URL = "https://smart-store-keeper.onrender.com/api";
 
 export const apiClient = {
   // Auth
@@ -47,7 +47,7 @@ export const apiClient = {
       },
       body: JSON.stringify(itemData),
     }).then((res) => res.json()),
-    
+
   releaseItem: (token, itemId) =>
     fetch(`${BASE_URL}/items/${itemId}/release`, {
       method: "PUT",
