@@ -1,4 +1,4 @@
-const BASE_URL = "https://expiry-traker.onrender.com/api";
+const BASE_URL = "http://localhost:5001/api";
 
 export const apiClient = {
   // Auth

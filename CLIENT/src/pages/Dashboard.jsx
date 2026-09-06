@@ -38,26 +38,22 @@ const Dashboard = () => {
   const { token, logout } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed to false by default
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [bulkItems, setBulkItems] = useState("");
   const [bulkMessage, setBulkMessage] = useState("");
 
-  // Close sidebar on window resize (if screen becomes large, we want it open)
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const applyState = (matches) => {
+      setIsDesktop(matches);
+      setSidebarOpen(matches); // desktop: sidebar always visible; mobile: drawer starts closed
     };
-    
-    // Set initial state based on screen size
-    handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    applyState(mq.matches);
+    const handler = (e) => applyState(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   useEffect(() => {
@@ -71,8 +67,6 @@ const Dashboard = () => {
         .finally(() => setLoading(false));
     }
   }, [token]);
-
-  // ... rest of your stats, trend, etc. (keep the same) ...
 
   const stats = useMemo(() => {
     const totalItems = items.length;
@@ -199,11 +193,17 @@ const Dashboard = () => {
 
   const handleRelease = async (itemId) => {
     if (!itemId) return;
-    if (window.confirm("Release this item? It will be permanently removed from inventory.")) {
+    if (
+      window.confirm(
+        "Release this item? It will be permanently removed from inventory.",
+      )
+    ) {
       try {
         const response = await apiClient.releaseItem(token, itemId);
         if (response.message) {
-          setItems((prevItems) => prevItems.filter((item) => item._id !== itemId));
+          setItems((prevItems) =>
+            prevItems.filter((item) => item._id !== itemId),
+          );
           setBulkMessage("Item released and removed from inventory!");
           setTimeout(() => setBulkMessage(""), 3000);
         } else {
@@ -217,7 +217,9 @@ const Dashboard = () => {
 
   const handleBulkAdd = async () => {
     if (!bulkItems.trim()) {
-      setBulkMessage("Please paste items in the format: Name, Category, ExpiryDate, Quantity, Price");
+      setBulkMessage(
+        "Please paste items in the format: Name, Category, ExpiryDate, Quantity, Price",
+      );
       setTimeout(() => setBulkMessage(""), 3000);
       return;
     }
@@ -266,7 +268,7 @@ const Dashboard = () => {
     const duplicatesInBatch = parsedItems.length - itemsToCreate.length;
     let msg = "";
     if (success > 0 && failed === 0) {
-    msg = ` ${success} items created successfully!${duplicatesInBatch > 0 ? ` (${duplicatesInBatch} duplicate rows merged)` : ""}`;
+      msg = `${success} items created successfully!${duplicatesInBatch > 0 ? ` (${duplicatesInBatch} duplicate rows merged)` : ""}`;
     } else if (success > 0 && failed > 0) {
       msg = `${success} items created, ${failed} failed.`;
     } else {
@@ -286,6 +288,8 @@ const Dashboard = () => {
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
+  const showLabels = isDesktop || sidebarOpen;
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 min-h-screen bg-[#0a1a2f]">
@@ -293,42 +297,42 @@ const Dashboard = () => {
           <div className="absolute inset-0 rounded-full border-2 border-[#1c3a5e]" />
           <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#4a9fdb] animate-spin" />
         </div>
-        <span className="text-xs tracking-wide text-[#5b7699]">Loading inventory...</span>
+        <span className="text-xs tracking-wide text-[#5b7699]">
+          Loading inventory...
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0a1a2f] text-[#e8eef7]">
+    <div className="min-h-screen bg-[#0a1a2f] text-[#e8eef7]">
       {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div 
+      {sidebarOpen && !isDesktop && (
+        <div
           className="fixed inset-0 z-40 bg-black/60 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — pinned flush to the left edge at full viewport height, every screen size */}
       <aside
-        className={`fixed lg:relative z-50 h-full flex flex-col flex-shrink-0 transition-all duration-300 bg-[#0c2038] border-r border-[#16304f] overflow-hidden ${
-          sidebarOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:translate-x-0 lg:w-[72px]"
+        className={`fixed inset-y-0 left-0 z-50 h-screen w-64 flex flex-col flex-shrink-0 transition-transform duration-300 bg-[#0c2038] border-r border-[#16304f] ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="flex items-center h-16 px-4 border-b border-[#16304f] flex-shrink-0">
-          <div className={`flex items-center gap-2.5 min-w-0 ${!sidebarOpen && "lg:opacity-0"}`}>
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#4a9fdb] to-[#2f6fa8] shrink-0">
               <Package className="w-4.5 h-4.5 text-white" strokeWidth={2.25} />
             </div>
-            {sidebarOpen && (
-              <span className="text-[15px] font-semibold tracking-tight truncate whitespace-nowrap text-white">
-                Store
-              </span>
-            )}
+            <span className="text-[15px] font-semibold tracking-tight truncate whitespace-nowrap text-white">
+              Store
+            </span>
           </div>
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            onClick={() => setSidebarOpen(false)}
             className="p-1.5 rounded-md text-[#5b7699] hover:text-[#c9d8ec] hover:bg-white/5 transition-colors flex-shrink-0 ml-auto lg:hidden"
-            aria-label="Toggle sidebar"
+            aria-label="Close menu"
           >
             <X className="w-4 h-4" />
           </button>
@@ -342,13 +346,13 @@ const Dashboard = () => {
                 key={item.id}
                 onClick={() => {
                   setActiveTab(item.id);
-                  setSidebarOpen(false);
+                  if (!isDesktop) setSidebarOpen(false);
                 }}
                 className={`group relative flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? "bg-[#4a9fdb]/10 text-[#4892ba]"
+                    ? "bg-[#4a9fdb]/10 text-[#7fc4ea]"
                     : "text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04]"
-                } ${!sidebarOpen && "lg:justify-center"}`}
+                }`}
               >
                 {isActive && (
                   <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[#4a9fdb]" />
@@ -359,9 +363,7 @@ const Dashboard = () => {
                   }`}
                   strokeWidth={isActive ? 2.25 : 1.9}
                 />
-                <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>
-                  {item.label}
-                </span>
+                {showLabels && <span className="truncate">{item.label}</span>}
               </button>
             );
           })}
@@ -369,33 +371,27 @@ const Dashboard = () => {
           <div className="pt-3 mt-3 border-t border-[#16304f]/80 space-y-0.5">
             <RouterLink
               to="/stock"
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
-                !sidebarOpen && "lg:justify-center"
-              }`}
+              onClick={() => !isDesktop && setSidebarOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors"
             >
               <Package className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
-              <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Stock</span>
+              {showLabels && <span className="truncate">Stock</span>}
             </RouterLink>
             <RouterLink
               to="/reports"
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
-                !sidebarOpen && "lg:justify-center"
-              }`}
+              onClick={() => !isDesktop && setSidebarOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors"
             >
               <FileSpreadsheet className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
-              <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Reports</span>
+              {showLabels && <span className="truncate">Reports</span>}
             </RouterLink>
             <RouterLink
               to="/charts"
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors ${
-                !sidebarOpen && "lg:justify-center"
-              }`}
+              onClick={() => !isDesktop && setSidebarOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors"
             >
               <BarChart3 className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
-              <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Charts</span>
+              {showLabels && <span className="truncate">Charts</span>}
             </RouterLink>
           </div>
         </nav>
@@ -403,25 +399,26 @@ const Dashboard = () => {
         <div className="p-2.5 border-t border-[#16304f]">
           <button
             onClick={logout}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#e0708f] hover:bg-[#c23e8f]/10 transition-colors ${
-              !sidebarOpen && "lg:justify-center"
-            }`}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#e0708f] hover:bg-[#c23e8f]/10 transition-colors"
           >
             <LogOut className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
-            <span className={`${!sidebarOpen && "lg:hidden"} truncate`}>Logout</span>
+            {showLabels && <span className="truncate">Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-[radial-gradient(ellipse_at_top,rgba(74,159,219,0.06),transparent_55%)]">
-        {/* Hamburger Menu - Mobile Only */}
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-lg bg-[#0c2038] border border-[#16304f] text-[#7f97b8] hover:text-white transition-colors"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+      {/* Main Content — offset by the sidebar's width on desktop */}
+      <main className="lg:ml-64 overflow-y-auto p-4 sm:p-6 md:p-8 bg-[radial-gradient(ellipse_at_top,rgba(74,159,219,0.06),transparent_55%)] min-h-screen">
+        {/* Hamburger Menu — mobile only, renders above every tab */}
+        {!isDesktop && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-lg bg-[#0c2038] border border-[#16304f] text-[#7f97b8] hover:text-white transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
 
         {activeTab === "dashboard" && (
           <div className="space-y-4 sm:space-y-5 max-w-[1400px] pt-12 lg:pt-0">
@@ -504,72 +501,70 @@ const Dashboard = () => {
               </button>
             </div>
 
-            <div className="h-[calc(100vh-200px)] overflow-y-auto pr-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-                {items.map((item) => {
-                  const days = daysUntil(item.expiryDate);
-                  let accent = "#3ecf8e";
-                  let statusText = "Fresh";
-                  let chipClasses = "bg-[#3ecf8e]/12 text-[#3ecf8e]";
-                  if (days < 0) {
-                    accent = "#c23e8f";
-                    statusText = "Expired";
-                    chipClasses = "bg-[#c23e8f]/12 text-[#e05fae]";
-                  } else if (days <= 3) {
-                    accent = "#f0a63a";
-                    statusText = "Soon";
-                    chipClasses = "bg-[#f0a63a]/12 text-[#f0a63a]";
-                  }
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pr-1 pb-3 overflow-y-auto"
+              style={{ maxHeight: "calc(100vh - 240px)" }}
+            >
+              {items.map((item) => {
+                const days = daysUntil(item.expiryDate);
+                let accent = "#3ecf8e";
+                let statusText = "Fresh";
+                let chipClasses = "bg-[#3ecf8e]/12 text-[#3ecf8e]";
+                if (days < 0) {
+                  accent = "#c23e8f";
+                  statusText = "Expired";
+                  chipClasses = "bg-[#c23e8f]/12 text-[#e05fae]";
+                } else if (days <= 3) {
+                  accent = "#f0a63a";
+                  statusText = "Soon";
+                  chipClasses = "bg-[#f0a63a]/12 text-[#f0a63a]";
+                }
 
-                  return (
-                    <div
-                      key={item._id}
-                      className="rounded-xl p-3 sm:p-4 bg-[#0f2540] border border-[#1c3a5e] hover:border-[#2c5581] transition-colors duration-150"
-                      style={{ borderLeft: `3px solid ${accent}` }}
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-[#e8eef7] truncate text-sm sm:text-base">
-                            {item.name}
-                          </h3>
-                          <p className="text-[10px] sm:text-xs mt-0.5 text-[#7f97b8]">
-                            {item.category || "Uncategorized"}
-                          </p>
-                        </div>
-                        <span className={`flex-shrink-0 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-md ${chipClasses}`}>
-                          {statusText}
+                return (
+                  <div
+                    key={item._id}
+                    className="rounded-xl p-3.5 bg-[#0f2540] border border-[#1c3a5e] hover:border-[#2c5581] transition-colors duration-150"
+                    style={{ borderLeft: `3px solid ${accent}` }}
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-[#e8eef7] truncate" title={item.name}>
+                          {item.name}
+                        </h3>
+                        <p className="text-xs mt-0.5 text-[#7f97b8]">
+                          {item.category || "Uncategorized"}
+                        </p>
+                      </div>
+                      <span className={`flex-shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-md ${chipClasses}`}>
+                        {statusText}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-[#1c3a5e]/60 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-[#5b7699]">Qty</span>
+                        <span className="text-[#e8eef7] font-medium text-xs">{item.quantity || 0}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-[#5b7699]">Price</span>
+                        <span className="text-[#e8eef7] font-medium text-xs">${item.price || 0}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] text-[#5b7699]">{days < 0 ? "Overdue" : "Left"}</span>
+                        <span className="font-medium text-xs" style={{ color: accent }}>
+                          {days < 0 ? `${Math.abs(days)}d` : `${days}d`}
                         </span>
                       </div>
-
-                      <div className="flex items-center justify-between mt-3 sm:mt-4 pt-3 border-t border-[#1c3a5e]/60 text-xs sm:text-sm">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] sm:text-[11px] text-[#5b7699]">Qty</span>
-                          <span className="text-[#e8eef7] font-medium">{item.quantity || 0}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] sm:text-[11px] text-[#5b7699]">Price</span>
-                          <span className="text-[#e8eef7] font-medium">${item.price || 0}</span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className="text-[10px] sm:text-[11px] text-[#5b7699]">{days < 0 ? "Overdue" : "Left"}</span>
-                          <span className="font-medium" style={{ color: accent }}>
-                            {days < 0 ? `${Math.abs(days)}d` : `${days}d`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          onClick={() => handleRelease(item._id)}
-                          className="text-[10px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-[#3ecf8e]/12 text-[#3ecf8e] border border-[#3ecf8e]/25 hover:bg-[#3ecf8e]/20 transition-colors"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" /> Release
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleRelease(item._id)}
+                        className="text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 bg-[#3ecf8e]/12 text-[#3ecf8e] border border-[#3ecf8e]/25 hover:bg-[#3ecf8e]/20 transition-colors flex-shrink-0"
+                      >
+                        <CheckCircle className="w-3 h-3" /> Release
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
 
             {items.length === 0 && (
@@ -582,14 +577,19 @@ const Dashboard = () => {
         )}
 
         {activeTab === "expired" && (
-          <ExpiredView items={items} onRelease={handleRelease} />
+          <div className="pt-12 lg:pt-0">
+            <ExpiredView items={items} onRelease={handleRelease} />
+          </div>
         )}
 
         {activeTab === "bulk" && (
           <div className="max-w-[900px] pt-12 lg:pt-0">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#e8eef7]">Bulk Add Items</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#e8eef7]">
+              Bulk Add Items
+            </h1>
             <p className="text-xs sm:text-sm mt-1.5 text-[#7f97b8]">
-              Paste items manually in the format: Name, Category, ExpiryDate, Quantity, Price
+              Paste items manually in the format: Name, Category, ExpiryDate,
+              Quantity, Price
             </p>
 
             <div className="mt-4 sm:mt-5 p-4 sm:p-5 rounded-xl bg-[#0f2540] border border-[#1c3a5e]">
@@ -597,7 +597,7 @@ const Dashboard = () => {
                 rows="10"
                 value={bulkItems}
                 onChange={(e) => setBulkItems(e.target.value)}
-                placeholder="Milk, Dairy, 2026-09-15, 10, 4.99\nBread, Bakery, 2026-08-30, 5, 2.49"
+                placeholder="Milk, Dairy, 2026-09-15, 10, 4.99&#10;Bread, Bakery, 2026-08-30, 5, 2.49"
                 className="w-full p-3 sm:p-3.5 rounded-lg text-xs sm:text-sm font-mono leading-relaxed bg-[#0a1a2f] text-[#e8eef7] border border-[#1c3a5e] outline-none focus:border-[#4a9fdb] transition-colors resize-y"
               />
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4">
@@ -615,10 +615,16 @@ const Dashboard = () => {
           </div>
         )}
 
-        {activeTab === "settings" && <SettingsView />}
+        {activeTab === "settings" && (
+          <div className="pt-12 lg:pt-0">
+            <SettingsView />
+          </div>
+        )}
       </main>
 
-      <AIChatbot onItemsExtracted={(items) => console.log("Items extracted:", items)} />
+      <AIChatbot
+        onItemsExtracted={(items) => console.log("Items extracted:", items)}
+      />
     </div>
   );
 };
