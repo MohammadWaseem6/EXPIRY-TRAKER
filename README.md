@@ -8,8 +8,8 @@ A full-stack inventory management system that helps you track product expiry dat
 
 ## 🚀 Live Demo
 
-- **Frontend:** [smart-store-afs.vercel.app](https://smart-store-afs.vercel.app)
-- **Backend API:** [smart-store-keeper.onrender.com](https://smart-store-keeper.onrender.com)
+- **DEMO:** [smart-store-afs.vercel.app](https://smart-storekeeper.vercel.app/)
+
 
 ## 📦 Features
 
