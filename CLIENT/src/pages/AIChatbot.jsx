@@ -8,9 +8,9 @@ import {
   Copy,
   Check,
   Bot,
-  FileText,
-  Image,
 } from "lucide-react";
+
+const BASE_URL = import.meta.env.VITE_API_URL || "https://smart-store-keeper.onrender.com/api";
 
 const AIChatbot = ({ onItemsExtracted }) => {
   const { token } = useAuth();
@@ -18,7 +18,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      content: "Upload a delivery note (Image, PDF, or Excel) and I'll extract items for you!",
+      content: "Upload a delivery note (Image, PDF, or Excel) and I'll extract items for you.",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +31,6 @@ const AIChatbot = ({ onItemsExtracted }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ---- Handle ALL file types ----
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -47,14 +46,14 @@ const AIChatbot = ({ onItemsExtracted }) => {
     formData.append("file", file);
 
     try {
-      // Try backend upload first (PDF, Excel)
-      const response = await fetch(`http://127.0.0.1:5001/api/upload/upload-file`, {
+      const response = await fetch(`${BASE_URL}/upload/upload-file`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       const data = await response.json();
+      console.log("Upload response:", data);
 
       if (data.success) {
         setExtractedItems(data.items);
@@ -71,7 +70,6 @@ const AIChatbot = ({ onItemsExtracted }) => {
         return;
       }
 
-      // If backend fails, try Tesseract (images only)
       if (file.type.startsWith("image/")) {
         await extractWithTesseract(file);
       } else {
@@ -85,7 +83,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
         });
       }
     } catch (error) {
-      // Fallback to Tesseract for images
+      console.error("Upload error:", error);
       if (file.type.startsWith("image/")) {
         await extractWithTesseract(file);
       } else {
@@ -104,7 +102,6 @@ const AIChatbot = ({ onItemsExtracted }) => {
     }
   };
 
-  // ---- Tesseract fallback for images ----
   const extractWithTesseract = async (imageFile) => {
     try {
       const result = await Tesseract.recognize(imageFile, "eng");
@@ -133,6 +130,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
         return newMessages;
       });
     } catch (error) {
+      console.error("Tesseract error:", error);
       setMessages((prev) => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
@@ -154,13 +152,13 @@ const AIChatbot = ({ onItemsExtracted }) => {
     setTimeout(() => setCopied(false), 2000);
     setMessages((prev) => [
       ...prev,
-      { role: "bot", content: "Items copied to clipboard! Go to Bulk Add and paste." },
+      { role: "bot", content: "Items copied to clipboard. Go to Bulk Add and paste." },
     ]);
   };
 
   return (
     <>
-      {/* Chat Button - Mobile Optimized */}
+      {/* Chat Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50 p-3 sm:p-4 rounded-full shadow-lg hover:scale-105 transition duration-200 bg-blue-500 hover:bg-blue-600 text-white"
@@ -168,13 +166,11 @@ const AIChatbot = ({ onItemsExtracted }) => {
         {isOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />}
       </button>
 
-      {/* Chat Window - Mobile Responsive */}
+      {/* Chat Window */}
       {isOpen && (
-        <div
-          className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 w-[calc(100%-24px)] sm:w-96 h-[70vh] sm:h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden bg-[#0f2540] dark:bg-[#0f2540] border border-[#1c3a5e]"
-        >
+        <div className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 w-[calc(100%-24px)] sm:w-96 h-[70vh] sm:h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden bg-[#0f2540] border border-[#1c3a5e]">
           {/* Header */}
-          <div className="p-3 sm:p-4 border-b border-[#1c3a5e] flex items-center justify-between bg-[#0f2540]">
+          <div className="p-3 sm:p-4 border-b border-[#1c3a5e] flex items-center justify-between bg-[#0f2540] flex-shrink-0">
             <div className="flex items-center gap-2">
               <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
               <span className="font-semibold text-sm sm:text-base text-gray-100">AI Assistant</span>
@@ -216,7 +212,7 @@ const AIChatbot = ({ onItemsExtracted }) => {
 
           {/* Copy Button */}
           {extractedItems.length > 0 && (
-            <div className="px-3 sm:px-4 py-2 border-t border-[#1c3a5e] bg-[#0f2540]">
+            <div className="px-3 sm:px-4 py-2 border-t border-[#1c3a5e] bg-[#0f2540] flex-shrink-0">
               <button
                 onClick={handleCopyToBulk}
                 className="w-full py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition hover:opacity-80 bg-blue-500 text-white"
@@ -230,8 +226,8 @@ const AIChatbot = ({ onItemsExtracted }) => {
             </div>
           )}
 
-          {/* Input Area - Mobile Optimized */}
-          <div className="p-3 sm:p-4 border-t border-[#1c3a5e] flex flex-col sm:flex-row gap-2 bg-[#0f2540]">
+          {/* Input Area */}
+          <div className="p-3 sm:p-4 border-t border-[#1c3a5e] flex flex-col sm:flex-row gap-2 bg-[#0f2540] flex-shrink-0">
             <div className="flex flex-1 gap-2">
               <input
                 type="file"
