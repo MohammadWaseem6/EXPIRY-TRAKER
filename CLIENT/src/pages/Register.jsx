@@ -16,7 +16,6 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "viewer",
   });
 
   const handleSubmit = async (e) => {
@@ -156,25 +155,6 @@ const Register = () => {
                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-          </div>
-
-          {/* Role Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-100">
-              Role
-            </label>
-            <select
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-lg outline-none transition appearance-none bg-[#0a1a2f] text-gray-100 border border-[#1c3a5e] focus:border-[#4a9fdb]"
-            >
-              <option value="viewer">Viewer (Read Only)</option>
-              <option value="storekeeper">Storekeeper</option>
-              <option value="manager">Manager</option>
-            </select>
-            <p className="text-xs mt-1 text-gray-400">
-              Admin accounts can only be created by invitation.
-            </p>
           </div>
 
           {/* Submit Button */}

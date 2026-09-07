@@ -155,30 +155,45 @@ const Dashboard = () => {
   }, [stats]);
 
   const categoryDonut = useMemo(() => {
-    const counts = {};
-    items.forEach((i) => {
-      const c = i.category || "Uncategorized";
-      counts[c] = (counts[c] || 0) + 1;
-    });
-    const total = items.length || 1;
-    const colors = [
-      "#4a9fdb",
-      "#7fc4ea",
-      "#3ecf8e",
-      "#c9d84a",
-      "#f0a63a",
-      "#c23e8f",
-    ];
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([name, value], idx) => ({
-        name,
-        value,
-        pct: (value / total) * 100,
-        color: colors[idx % colors.length],
-      }));
-  }, [items]);
+  const counts = {};
+  items.forEach((i) => {
+    const c = i.category || "Uncategorized";
+    counts[c] = (counts[c] || 0) + 1;
+  });
+  const total = items.length || 1;
+  
+  // More colors for more categories
+  const colors = [
+    "#4a9fdb", "#7fc4ea", "#3ecf8e", "#c9d84a",
+    "#f0a63a", "#c23e8f", "#7b4fb0", "#f06a6a",
+    "#6ab0f0", "#6af0a8", "#f0d06a", "#d06af0",
+    "#f0a0d0", "#a0d0f0", "#d0f0a0", "#f0d0a0",
+    "#a0f0d0", "#d0a0f0", "#f0a0a0", "#a0a0f0"
+  ];
+  
+  // Sort categories by count (highest first)
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  
+  // Show all categories, but group tiny ones as "Others"
+  let result;
+  if (sorted.length > 10) {
+    // Show top 9 categories, group the rest as "Others"
+    const top = sorted.slice(0, 9);
+    const others = sorted.slice(9);
+    const othersCount = others.reduce((sum, [, count]) => sum + count, 0);
+    top.push(["Others", othersCount]);
+    result = top;
+  } else {
+    result = sorted;
+  }
+  
+  return result.map(([name, value], idx) => ({
+    name,
+    value,
+    pct: (value / total) * 100,
+    color: colors[idx % colors.length],
+  }));
+}, [items]);
 
   const leaderboard = useMemo(() => {
     return [...items]
