@@ -48,7 +48,7 @@ const Dashboard = () => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const applyState = (matches) => {
       setIsDesktop(matches);
-      setSidebarOpen(matches); // desktop: sidebar always visible; mobile: drawer starts closed
+      setSidebarOpen(matches);
     };
     applyState(mq.matches);
     const handler = (e) => applyState(e.matches);
@@ -161,7 +161,6 @@ const Dashboard = () => {
     });
     const total = items.length || 1;
 
-    // More colors for more categories
     const colors = [
       "#4a9fdb",
       "#7fc4ea",
@@ -185,13 +184,10 @@ const Dashboard = () => {
       "#a0a0f0",
     ];
 
-    // Sort categories by count (highest first)
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
 
-    // Show all categories, but group tiny ones as "Others"
     let result;
     if (sorted.length > 10) {
-      // Show top 9 categories, group the rest as "Others"
       const top = sorted.slice(0, 9);
       const others = sorted.slice(9);
       const othersCount = others.reduce((sum, [, count]) => sum + count, 0);
@@ -344,7 +340,7 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Sidebar — pinned flush to the left edge at full viewport height, every screen size */}
+      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 h-screen w-64 flex flex-col flex-shrink-0 transition-transform duration-300 bg-[#0c2038] border-r border-[#16304f] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -369,6 +365,7 @@ const Dashboard = () => {
         </div>
 
         <nav className="flex-1 px-2.5 py-4 space-y-0.5 overflow-y-auto">
+          {/* Main Navigation */}
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -398,18 +395,11 @@ const Dashboard = () => {
             );
           })}
 
-          <div className="pt-3 mt-3 border-t border-[#16304f]/80 space-y-0.5">
-            <RouterLink
-              to="/stock"
-              onClick={() => !isDesktop && setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors"
-            >
-              <Package
-                className="w-[18px] h-[18px] flex-shrink-0"
-                strokeWidth={1.9}
-              />
-              {showLabels && <span className="truncate">Stock</span>}
-            </RouterLink>
+          {/* Divider */}
+          <div className="pt-3 mt-3 border-t border-[#16304f]/80" />
+
+          {/* Bottom Navigation - Reports & Charts only (Stock removed - already in navItems) */}
+          <div className="space-y-0.5">
             <RouterLink
               to="/reports"
               onClick={() => !isDesktop && setSidebarOpen(false)}
@@ -449,9 +439,9 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* Main Content — offset by the sidebar's width on desktop */}
+      {/* Main Content */}
       <main className="lg:ml-64 overflow-y-auto p-4 sm:p-6 md:p-8 bg-[radial-gradient(ellipse_at_top,rgba(74,159,219,0.06),transparent_55%)] min-h-screen">
-        {/* Hamburger Menu — mobile only, renders above every tab */}
+        {/* Hamburger Menu - Mobile Only */}
         {!isDesktop && (
           <button
             onClick={() => setSidebarOpen(true)}
