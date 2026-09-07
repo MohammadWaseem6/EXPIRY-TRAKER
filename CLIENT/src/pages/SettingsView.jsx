@@ -154,8 +154,8 @@ const SettingsView = ({ items = [] }) => {
         </div>
       </div>
 
-      {/* Section Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl overflow-x-auto bg-[#0a1a2f]">
+      {/* Section Tabs - Fixed: Full labels visible */}
+      <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-[#0a1a2f]">
         {sections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
@@ -163,15 +163,14 @@ const SettingsView = ({ items = [] }) => {
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition whitespace-nowrap ${
                 isActive 
                   ? 'bg-[#0f2540] text-gray-100 border border-[#1c3a5e]' 
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
               <Icon className="w-4 h-4" />
-              <span className="hidden xs:inline">{section.label}</span>
-              <span className="xs:hidden">{section.label.charAt(0)}</span>
+              <span>{section.label}</span>
             </button>
           );
         })}
