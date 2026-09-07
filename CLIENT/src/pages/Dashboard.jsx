@@ -18,7 +18,6 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 import AIChatbot from "./AIChatbot";
 
-
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import StatsCards from "../components/dashboard/StatsCards";
 import Panel from "../components/dashboard/Panel";
@@ -155,45 +154,60 @@ const Dashboard = () => {
   }, [stats]);
 
   const categoryDonut = useMemo(() => {
-  const counts = {};
-  items.forEach((i) => {
-    const c = i.category || "Uncategorized";
-    counts[c] = (counts[c] || 0) + 1;
-  });
-  const total = items.length || 1;
-  
-  // More colors for more categories
-  const colors = [
-    "#4a9fdb", "#7fc4ea", "#3ecf8e", "#c9d84a",
-    "#f0a63a", "#c23e8f", "#7b4fb0", "#f06a6a",
-    "#6ab0f0", "#6af0a8", "#f0d06a", "#d06af0",
-    "#f0a0d0", "#a0d0f0", "#d0f0a0", "#f0d0a0",
-    "#a0f0d0", "#d0a0f0", "#f0a0a0", "#a0a0f0"
-  ];
-  
-  // Sort categories by count (highest first)
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  
-  // Show all categories, but group tiny ones as "Others"
-  let result;
-  if (sorted.length > 10) {
-    // Show top 9 categories, group the rest as "Others"
-    const top = sorted.slice(0, 9);
-    const others = sorted.slice(9);
-    const othersCount = others.reduce((sum, [, count]) => sum + count, 0);
-    top.push(["Others", othersCount]);
-    result = top;
-  } else {
-    result = sorted;
-  }
-  
-  return result.map(([name, value], idx) => ({
-    name,
-    value,
-    pct: (value / total) * 100,
-    color: colors[idx % colors.length],
-  }));
-}, [items]);
+    const counts = {};
+    items.forEach((i) => {
+      const c = i.category || "Uncategorized";
+      counts[c] = (counts[c] || 0) + 1;
+    });
+    const total = items.length || 1;
+
+    // More colors for more categories
+    const colors = [
+      "#4a9fdb",
+      "#7fc4ea",
+      "#3ecf8e",
+      "#c9d84a",
+      "#f0a63a",
+      "#c23e8f",
+      "#7b4fb0",
+      "#f06a6a",
+      "#6ab0f0",
+      "#6af0a8",
+      "#f0d06a",
+      "#d06af0",
+      "#f0a0d0",
+      "#a0d0f0",
+      "#d0f0a0",
+      "#f0d0a0",
+      "#a0f0d0",
+      "#d0a0f0",
+      "#f0a0a0",
+      "#a0a0f0",
+    ];
+
+    // Sort categories by count (highest first)
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+    // Show all categories, but group tiny ones as "Others"
+    let result;
+    if (sorted.length > 10) {
+      // Show top 9 categories, group the rest as "Others"
+      const top = sorted.slice(0, 9);
+      const others = sorted.slice(9);
+      const othersCount = others.reduce((sum, [, count]) => sum + count, 0);
+      top.push(["Others", othersCount]);
+      result = top;
+    } else {
+      result = sorted;
+    }
+
+    return result.map(([name, value], idx) => ({
+      name,
+      value,
+      pct: (value / total) * 100,
+      color: colors[idx % colors.length],
+    }));
+  }, [items]);
 
   const leaderboard = useMemo(() => {
     return [...items]
@@ -390,7 +404,10 @@ const Dashboard = () => {
               onClick={() => !isDesktop && setSidebarOpen(false)}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors"
             >
-              <Package className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+              <Package
+                className="w-[18px] h-[18px] flex-shrink-0"
+                strokeWidth={1.9}
+              />
               {showLabels && <span className="truncate">Stock</span>}
             </RouterLink>
             <RouterLink
@@ -398,7 +415,10 @@ const Dashboard = () => {
               onClick={() => !isDesktop && setSidebarOpen(false)}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors"
             >
-              <FileSpreadsheet className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+              <FileSpreadsheet
+                className="w-[18px] h-[18px] flex-shrink-0"
+                strokeWidth={1.9}
+              />
               {showLabels && <span className="truncate">Reports</span>}
             </RouterLink>
             <RouterLink
@@ -406,7 +426,10 @@ const Dashboard = () => {
               onClick={() => !isDesktop && setSidebarOpen(false)}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#c9d8ec] hover:bg-white/[0.04] transition-colors"
             >
-              <BarChart3 className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+              <BarChart3
+                className="w-[18px] h-[18px] flex-shrink-0"
+                strokeWidth={1.9}
+              />
               {showLabels && <span className="truncate">Charts</span>}
             </RouterLink>
           </div>
@@ -417,7 +440,10 @@ const Dashboard = () => {
             onClick={logout}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-[#7f97b8] hover:text-[#e0708f] hover:bg-[#c23e8f]/10 transition-colors"
           >
-            <LogOut className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.9} />
+            <LogOut
+              className="w-[18px] h-[18px] flex-shrink-0"
+              strokeWidth={1.9}
+            />
             {showLabels && <span className="truncate">Logout</span>}
           </button>
         </div>
@@ -544,14 +570,19 @@ const Dashboard = () => {
                   >
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm text-[#e8eef7] truncate" title={item.name}>
+                        <h3
+                          className="font-semibold text-sm text-[#e8eef7] truncate"
+                          title={item.name}
+                        >
                           {item.name}
                         </h3>
                         <p className="text-xs mt-0.5 text-[#7f97b8]">
                           {item.category || "Uncategorized"}
                         </p>
                       </div>
-                      <span className={`flex-shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-md ${chipClasses}`}>
+                      <span
+                        className={`flex-shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-md ${chipClasses}`}
+                      >
                         {statusText}
                       </span>
                     </div>
@@ -559,15 +590,26 @@ const Dashboard = () => {
                     <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-[#1c3a5e]/60 text-sm">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-[#5b7699]">Qty</span>
-                        <span className="text-[#e8eef7] font-medium text-xs">{item.quantity || 0}</span>
+                        <span className="text-[#e8eef7] font-medium text-xs">
+                          {item.quantity || 0}
+                        </span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] text-[#5b7699]">Price</span>
-                        <span className="text-[#e8eef7] font-medium text-xs">${item.price || 0}</span>
+                        <span className="text-[10px] text-[#5b7699]">
+                          Price
+                        </span>
+                        <span className="text-[#e8eef7] font-medium text-xs">
+                          ${item.price || 0}
+                        </span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] text-[#5b7699]">{days < 0 ? "Overdue" : "Left"}</span>
-                        <span className="font-medium text-xs" style={{ color: accent }}>
+                        <span className="text-[10px] text-[#5b7699]">
+                          {days < 0 ? "Overdue" : "Left"}
+                        </span>
+                        <span
+                          className="font-medium text-xs"
+                          style={{ color: accent }}
+                        >
                           {days < 0 ? `${Math.abs(days)}d` : `${days}d`}
                         </span>
                       </div>
@@ -585,8 +627,13 @@ const Dashboard = () => {
 
             {items.length === 0 && (
               <div className="rounded-xl p-10 sm:p-14 text-center bg-[#0f2540] border border-dashed border-[#1c3a5e]">
-                <Package className="w-10 h-10 mx-auto text-[#3a5578]" strokeWidth={1.5} />
-                <p className="mt-3 text-sm text-[#7f97b8]">No items in inventory</p>
+                <Package
+                  className="w-10 h-10 mx-auto text-[#3a5578]"
+                  strokeWidth={1.5}
+                />
+                <p className="mt-3 text-sm text-[#7f97b8]">
+                  No items in inventory
+                </p>
               </div>
             )}
           </div>
@@ -624,7 +671,9 @@ const Dashboard = () => {
                   Add All Items
                 </button>
                 {bulkMessage && (
-                  <p className="text-sm text-[#3ecf8e] break-words">{bulkMessage}</p>
+                  <p className="text-sm text-[#3ecf8e] break-words">
+                    {bulkMessage}
+                  </p>
                 )}
               </div>
             </div>
