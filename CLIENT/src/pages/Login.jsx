@@ -45,7 +45,7 @@ const Login = () => {
           Welcome Back
         </h2>
         <p className="text-xs sm:text-sm text-center mt-1 text-gray-400">
-          Login in to manage your inventory
+          Login to manage your inventory
         </p>
 
         {/* Error Message */}
